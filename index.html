@@ -1,0 +1,1222 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>HallMaster Enterprise — Wireframe System</title>
+<style>
+  :root{
+    --ink:#111827; --sub:#4b5563; --mute:#6b7280; --line:#e5e7eb;
+    --bg:#f6f7f9; --card:#ffffff; --accent:#0B4EA2; --accent-soft:#E7EEF8;
+    --warn:#9A5A00; --warn-bg:#FFF4E5; --ok:#196B3D; --ok-bg:#E6F6EE;
+    --err:#B42318; --err-bg:#FEE4E2; --info:#254F91; --info-bg:#E8EEF9;
+    --skel:#eceef3; --grid:#d9def0;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;padding:0;font-family:-apple-system,"Segoe UI",Inter,Roboto,sans-serif;background:var(--bg);color:var(--ink)}
+  header.docnav{position:sticky;top:0;z-index:20;background:#0B2753;color:#fff;padding:14px 24px;display:flex;gap:24px;align-items:center;flex-wrap:wrap;border-bottom:2px solid #082047}
+  header.docnav h1{font-size:16px;margin:0;letter-spacing:.2px}
+  header.docnav nav a{color:#c9d7ef;text-decoration:none;font-size:12px;padding:6px 10px;border-radius:6px}
+  header.docnav nav a:hover{background:#0d3576;color:#fff}
+  main{max-width:1400px;margin:0 auto;padding:32px 24px 80px}
+  section.chapter{margin:48px 0}
+  section.chapter > h2{font-size:22px;margin:0 0 4px;color:var(--ink);border-left:4px solid var(--accent);padding-left:10px}
+  section.chapter > p.lede{color:var(--sub);margin:4px 0 20px;font-size:14px;max-width:820px}
+  .wireboard{display:grid;grid-template-columns:repeat(auto-fit,minmax(320px,1fr));gap:24px}
+  .frame{background:var(--card);border:1px solid var(--line);border-radius:14px;overflow:hidden;display:flex;flex-direction:column;box-shadow:0 1px 0 rgba(15,23,42,.03)}
+  .frame header{background:#0B2753;color:#fff;padding:8px 12px;font-size:11px;letter-spacing:.4px;display:flex;justify-content:space-between;align-items:center}
+  .frame header .tag{background:#1a3e80;padding:2px 6px;border-radius:4px;font-size:9px;text-transform:uppercase;letter-spacing:.6px}
+  .frame .device{background:#f1f3f8;padding:16px;display:flex;justify-content:center}
+  .phone{width:280px;min-height:520px;background:#fff;border:8px solid #111827;border-radius:28px;overflow:hidden;display:flex;flex-direction:column;position:relative;font-size:11px}
+  .tablet{width:100%;max-width:520px;min-height:420px;background:#fff;border:6px solid #111827;border-radius:16px;overflow:hidden;display:flex;flex-direction:column;font-size:11px}
+  .statusbar{height:18px;background:#0B2753;color:#fff;display:flex;justify-content:space-between;align-items:center;padding:0 10px;font-size:8px;letter-spacing:.4px}
+  .appbar{background:#0B4EA2;color:#fff;padding:10px 12px;display:flex;align-items:center;justify-content:space-between;gap:8px}
+  .appbar .title{font-weight:600;font-size:12px}
+  .appbar .ico{width:22px;height:22px;border-radius:6px;background:rgba(255,255,255,.18);display:inline-flex;align-items:center;justify-content:center;color:#fff;font-size:11px}
+  .tabs{display:flex;border-bottom:1px solid var(--line);background:#fafbfd}
+  .tabs .tab{flex:1;padding:8px 6px;text-align:center;font-size:10px;color:var(--sub);font-weight:500;border-bottom:2px solid transparent}
+  .tabs .tab.active{color:var(--accent);border-color:var(--accent);background:#fff;font-weight:600}
+  .body{flex:1;padding:10px;background:#f6f8fc;display:flex;flex-direction:column;gap:8px;overflow:hidden}
+  .card{background:#fff;border:1px solid var(--line);border-radius:10px;padding:10px;display:flex;flex-direction:column;gap:6px}
+  .card.brand{background:var(--accent-soft);border-color:#d6e2f5}
+  .card .row{display:flex;align-items:center;gap:8px}
+  .thumb{width:32px;height:32px;border-radius:8px;background:var(--accent-soft);display:inline-flex;align-items:center;justify-content:center;color:var(--accent);font-size:12px;font-weight:700;flex-shrink:0}
+  .skel{background:linear-gradient(90deg,var(--skel) 25%,#f7f8fb 50%,var(--skel) 75%);height:10px;border-radius:4px}
+  .skel.short{width:40%}.skel.med{width:60%}.skel.long{width:90%}
+  .chip{display:inline-block;padding:2px 8px;border-radius:99px;font-size:9px;font-weight:600;letter-spacing:.4px;text-transform:uppercase}
+  .chip.ok{background:var(--ok-bg);color:var(--ok)}
+  .chip.warn{background:var(--warn-bg);color:var(--warn)}
+  .chip.err{background:var(--err-bg);color:var(--err)}
+  .chip.info{background:var(--info-bg);color:var(--info)}
+  .chip.brand{background:var(--accent-soft);color:var(--accent)}
+  .btn{background:var(--accent);color:#fff;padding:8px 10px;border-radius:8px;font-size:10px;font-weight:600;text-align:center;border:0}
+  .btn.outline{background:#fff;color:var(--accent);border:1px solid #c2d1ea}
+  .btn.ghost{background:transparent;color:var(--accent);padding:6px}
+  .btn.block{width:100%;display:block}
+  .btn.danger{background:var(--err)}
+  .btn.row{display:flex;gap:6px}
+  .btn.row .btn{flex:1}
+  .h{font-weight:700;font-size:13px;color:var(--ink);line-height:1.25}
+  .sub{font-size:10px;color:var(--sub);line-height:1.4}
+  .label{font-size:8px;letter-spacing:.7px;color:var(--accent);text-transform:uppercase;font-weight:700}
+  .input{background:#fff;border:1px solid var(--line);border-radius:8px;padding:8px 10px;font-size:10px;color:var(--mute);display:flex;justify-content:space-between;align-items:center}
+  .input.focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(11,78,162,.12)}
+  .input.err{border-color:var(--err);background:#fffafa}
+  .bottomnav{display:flex;border-top:1px solid var(--line);background:#fff}
+  .bottomnav .nav{flex:1;padding:8px 4px;text-align:center;color:var(--mute);font-size:9px;display:flex;flex-direction:column;align-items:center;gap:2px}
+  .bottomnav .nav.active{color:var(--accent);font-weight:700}
+  .bottomnav .nav .dot{width:4px;height:4px;border-radius:99px;background:var(--accent);opacity:0;margin-top:2px}
+  .bottomnav .nav.active .dot{opacity:1}
+  .metric{background:#fff;border:1px solid var(--line);border-radius:10px;padding:8px;flex:1;min-width:0;display:flex;flex-direction:column;gap:4px}
+  .metric .num{font-size:18px;font-weight:700;line-height:1}
+  .metric .lbl{font-size:9px;color:var(--sub)}
+  .grid2{display:grid;grid-template-columns:1fr 1fr;gap:6px}
+  .grid3{display:grid;grid-template-columns:repeat(3,1fr);gap:6px}
+  .hero{background:linear-gradient(140deg,#0B4EA2,#0C2753);color:#fff;padding:14px;border-radius:12px}
+  .hero .h{color:#fff}
+  .hero .sub{color:#d6e2f5}
+  .divider{height:1px;background:var(--line);margin:4px 0}
+  .banner{padding:8px 10px;border-radius:8px;font-size:10px;display:flex;gap:6px;align-items:flex-start;border:1px solid}
+  .banner.err{background:var(--err-bg);color:var(--err);border-color:#f3b5b0}
+  .banner.warn{background:var(--warn-bg);color:var(--warn);border-color:#f1d3a1}
+  .banner.ok{background:var(--ok-bg);color:var(--ok);border-color:#b9e0c8}
+  .toast{position:absolute;left:10px;right:10px;bottom:70px;background:#0B2753;color:#fff;padding:10px 12px;border-radius:10px;font-size:10px;display:flex;gap:8px;align-items:center;box-shadow:0 8px 24px rgba(0,0,0,.25)}
+  .fab{position:absolute;right:12px;bottom:72px;width:44px;height:44px;border-radius:99px;background:var(--accent);color:#fff;display:flex;align-items:center;justify-content:center;font-size:20px;box-shadow:0 8px 20px rgba(11,78,162,.35)}
+  .annot{background:#fff8dc;border:1px dashed #e0b84f;border-radius:10px;padding:10px 12px;font-size:12px;color:#6b4a00;margin-top:10px;line-height:1.5}
+  .annot b{color:#4a3300}
+  .rulebox{background:#fff;border:1px solid var(--line);border-radius:12px;padding:16px;margin-top:16px}
+  .rulebox h4{margin:0 0 8px;font-size:13px;color:var(--accent)}
+  .rulebox ul{margin:0;padding-left:18px}
+  .rulebox li{font-size:12px;color:var(--sub);margin-bottom:4px;line-height:1.5}
+  .legend{display:flex;gap:16px;flex-wrap:wrap;background:#fff;border:1px solid var(--line);border-radius:12px;padding:16px;margin-bottom:24px}
+  .legend .sw{display:flex;align-items:center;gap:8px;font-size:12px;color:var(--sub)}
+  .legend .swatch{width:18px;height:18px;border-radius:4px;border:1px solid rgba(0,0,0,.08)}
+  .floatlabel{position:absolute;top:-8px;left:14px;background:#fff;padding:0 6px;font-size:9px;color:var(--accent);font-weight:700;letter-spacing:.4px}
+  .fieldgroup{position:relative;padding:2px 0}
+  .searchbar{background:#fff;border:1px solid var(--line);border-radius:99px;padding:8px 12px;display:flex;align-items:center;gap:8px;font-size:11px;color:var(--mute)}
+  .filterrow{display:flex;gap:6px;overflow-x:auto}
+  .fchip{padding:4px 10px;border-radius:99px;background:#fff;border:1px solid var(--line);font-size:9px;color:var(--sub);white-space:nowrap}
+  .fchip.sel{background:var(--accent);color:#fff;border-color:var(--accent)}
+  .timeline{display:flex;flex-direction:column;gap:6px;font-size:9px;color:var(--sub)}
+  .timeline .slot{display:flex;gap:6px;align-items:center}
+  .timeline .bar{flex:1;height:8px;border-radius:4px;background:#eef2f8;position:relative;overflow:hidden}
+  .timeline .bar .fill{position:absolute;left:20%;width:40%;top:0;bottom:0;background:var(--accent)}
+  .timeline .bar .busy{position:absolute;left:60%;width:20%;top:0;bottom:0;background:var(--err);opacity:.5}
+  .modal{background:#fff;border-radius:14px;border:1px solid var(--line);overflow:hidden;box-shadow:0 20px 40px rgba(0,0,0,.15)}
+  .modal .mhead{padding:14px 16px;border-bottom:1px solid var(--line);display:flex;justify-content:space-between;align-items:center}
+  .modal .mbody{padding:16px;display:flex;flex-direction:column;gap:10px}
+  .modal .mfoot{padding:12px 16px;border-top:1px solid var(--line);display:flex;gap:8px;justify-content:flex-end;background:#fafbfd}
+  .overlay{position:absolute;inset:0;background:rgba(11,39,83,.55);display:flex;align-items:center;justify-content:center;padding:20px}
+  .overlay .modal{width:100%;max-width:260px}
+  .empty-illus{width:56px;height:56px;border-radius:14px;background:var(--accent-soft);display:flex;align-items:center;justify-content:center;font-size:24px;color:var(--accent);margin:0 auto}
+  .tokens-table{width:100%;border-collapse:collapse;background:#fff;border:1px solid var(--line);border-radius:12px;overflow:hidden;font-size:12px}
+  .tokens-table th{background:#f3f5fa;text-align:left;padding:10px 12px;color:var(--ink);font-weight:600;border-bottom:1px solid var(--line)}
+  .tokens-table td{padding:10px 12px;border-bottom:1px solid var(--line);color:var(--sub);vertical-align:top}
+  .tokens-table td code{background:#f3f5fa;padding:1px 6px;border-radius:4px;font-size:11px;color:var(--accent)}
+  .tokens-table tr:last-child td{border-bottom:0}
+  .gridbg{background:
+    linear-gradient(to right,var(--grid) 1px,transparent 1px) 0 0/16px 100%,
+    #fff;}
+  .hallcard{display:flex;gap:8px}
+  .hallcard .img{width:64px;height:54px;border-radius:8px;background:linear-gradient(135deg,#c9d7ef,#89a6d3);display:flex;align-items:center;justify-content:center;color:#fff;font-size:18px}
+  .userrow{display:flex;gap:8px;align-items:center}
+  .avatar{width:28px;height:28px;border-radius:99px;background:var(--accent-soft);color:var(--accent);font-weight:700;display:flex;align-items:center;justify-content:center;font-size:11px}
+  .section-title{font-size:15px;font-weight:700;color:var(--ink);margin:24px 0 8px}
+  .subtitle{font-size:13px;font-weight:600;color:var(--ink);margin:12px 0 6px;text-transform:uppercase;letter-spacing:.6px}
+  .badge-count{background:var(--err);color:#fff;font-size:8px;padding:1px 5px;border-radius:99px;font-weight:700}
+  .keyline{border-top:1px dashed var(--line);margin:8px 0}
+  .progress{height:6px;background:#e5e7eb;border-radius:4px;overflow:hidden}
+  .progress .bar{height:100%;background:var(--accent);width:50%}
+  .dot-nav{display:flex;gap:4px;justify-content:center;padding:6px}
+  .dot-nav .d{width:5px;height:5px;border-radius:99px;background:var(--line)}
+  .dot-nav .d.active{background:var(--accent);width:14px}
+  @media (max-width:700px){.phone{width:100%}}
+</style>
+</head>
+<body>
+
+<header class="docnav">
+  <h1>HallMaster Enterprise — Wireframe System v1.0</h1>
+  <nav>
+    <a href="#tokens">Tokens</a>
+    <a href="#guest">Guest</a>
+    <a href="#auth">Auth</a>
+    <a href="#user">User</a>
+    <a href="#booking">Booking</a>
+    <a href="#mybookings">My Bookings</a>
+    <a href="#admin">Admin</a>
+    <a href="#dialogs">Dialogs</a>
+    <a href="#states">States</a>
+    <a href="#rules">Business Rules</a>
+  </nav>
+</header>
+
+<main>
+
+<section class="chapter" id="intro">
+  <h2>0 · Wireframe Strategy Summary</h2>
+  <p class="lede">Low-to-mid fidelity wireframes for a role-based hall booking system. Three audiences (Guest, User, Admin), one calm enterprise visual language, and visible business-rule annotations so reviewers can check logic before build.</p>
+  <div class="legend">
+    <div class="sw"><span class="swatch" style="background:#0B4EA2"></span>Brand / Primary</div>
+    <div class="sw"><span class="swatch" style="background:#196B3D"></span>Success / Confirmed</div>
+    <div class="sw"><span class="swatch" style="background:#9A5A00"></span>Warning / Pending</div>
+    <div class="sw"><span class="swatch" style="background:#B42318"></span>Danger / Cancelled</div>
+    <div class="sw"><span class="swatch" style="background:#254F91"></span>Info / Completed</div>
+    <div class="sw"><span class="swatch" style="background:#f6f7f9;border-color:#d4dded"></span>Canvas</div>
+  </div>
+</section>
+
+<!-- ================= TOKENS ================= -->
+<section class="chapter" id="tokens">
+  <h2>1 · Design Tokens Summary</h2>
+  <p class="lede">Tokens power every frame. Reuse them in Figma styles — no raw hex in components.</p>
+  <table class="tokens-table">
+    <thead><tr><th style="width:22%">Group</th><th style="width:28%">Tokens</th><th>Usage</th></tr></thead>
+    <tbody>
+      <tr><td>Spacing (4pt)</td><td><code>s1 4</code> <code>s2 8</code> <code>s3 12</code> <code>s4 16</code> <code>s5 20</code> <code>s6 24</code> <code>s7 32</code> <code>s8 40</code></td><td>Always pick from this scale; never arbitrary pixel gaps.</td></tr>
+      <tr><td>Radius</td><td><code>xs 6</code> <code>sm 10</code> <code>md 14</code> <code>lg 20</code> <code>pill 999</code></td><td>Cards md, modals lg, chips pill.</td></tr>
+      <tr><td>Type scale</td><td><code>display 28/32</code> <code>title 20/26</code> <code>body 14/20</code> <code>label 12/16</code> <code>meta 11/14</code></td><td>Never skip more than one step of hierarchy in one card.</td></tr>
+      <tr><td>Color — brand</td><td><code>#0B4EA2</code> <code>#0C2753</code> <code>#E7EEF8</code></td><td>Primary actions, key surfaces, brand moments.</td></tr>
+      <tr><td>Color — status</td><td><code>success #196B3D</code> <code>warning #9A5A00</code> <code>danger #B42318</code> <code>info #254F91</code></td><td>Each paired with its tinted surface for WCAG AA contrast.</td></tr>
+      <tr><td>Motion</td><td><code>fast 120</code> <code>base 200</code> <code>slow 280</code></td><td>Ease standard for interactions, ease emphasized for sheets.</td></tr>
+      <tr><td>Breakpoints</td><td><code>compact 0</code> <code>medium 600</code> <code>expanded 840</code> <code>large 1200</code></td><td>Mobile first; rail appears at expanded.</td></tr>
+    </tbody>
+  </table>
+</section>
+
+<!-- ================= GUEST HOME ================= -->
+<section class="chapter" id="guest">
+  <h2>2 · Guest Home</h2>
+  <p class="lede">Goal: evaluate halls quickly without an account. Discoverability first; conversion to sign-in second.</p>
+
+  <div class="wireboard">
+
+    <!-- Default -->
+    <div class="frame">
+      <header><span>Guest Home · Default</span><span class="tag">Mobile</span></header>
+      <div class="device">
+        <div class="phone">
+          <div class="statusbar"><span>9:41</span><span>HallMaster</span></div>
+          <div class="appbar"><span class="title">HallMaster</span><div style="display:flex;gap:6px"><span class="ico">?</span><span class="ico">→</span></div></div>
+          <div class="body">
+            <div class="hero">
+              <div class="label" style="color:#bcd3f0">Browse as guest</div>
+              <div class="h">Find a hall that fits your event</div>
+              <div class="sub">No account needed to explore. Sign in to book.</div>
+              <div style="height:8px"></div>
+              <div class="btn outline" style="background:rgba(255,255,255,.12);color:#fff;border-color:rgba(255,255,255,.35)">Sign in to book</div>
+            </div>
+            <div class="searchbar"><span>🔍</span><span>Search halls, capacity, campus…</span></div>
+            <div class="filterrow">
+              <div class="fchip sel">All</div>
+              <div class="fchip">Auditorium</div>
+              <div class="fchip">Seminar</div>
+              <div class="fchip">Lab</div>
+              <div class="fchip">≥200</div>
+            </div>
+            <div class="card hallcard">
+              <div class="img">🏛</div>
+              <div style="flex:1">
+                <div class="h">Al-Kindi Grand Hall</div>
+                <div class="sub">Capacity 400 · A/V · Stage</div>
+                <div style="height:4px"></div>
+                <div class="chip brand">View details</div>
+              </div>
+            </div>
+            <div class="card hallcard">
+              <div class="img" style="background:linear-gradient(135deg,#f2c7a2,#d88b45)">🎤</div>
+              <div style="flex:1">
+                <div class="h">Ibn Sina Auditorium</div>
+                <div class="sub">Capacity 250 · Mic · Projector</div>
+                <div style="height:4px"></div>
+                <div class="chip brand">View details</div>
+              </div>
+            </div>
+          </div>
+          <div class="bottomnav">
+            <div class="nav active">🏠<span>Home</span><span class="dot"></span></div>
+            <div class="nav">🔎<span>Explore</span></div>
+            <div class="nav">👤<span>Sign in</span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Search typing -->
+    <div class="frame">
+      <header><span>Guest Home · Search typing</span><span class="tag">Mid-fi</span></header>
+      <div class="device">
+        <div class="phone">
+          <div class="statusbar"><span>9:41</span><span>HallMaster</span></div>
+          <div class="appbar"><span class="title">HallMaster</span><div><span class="ico">✕</span></div></div>
+          <div class="body">
+            <div class="searchbar focus" style="border:2px solid var(--accent)"><span>🔍</span><span style="color:var(--ink)">Al|</span></div>
+            <div class="sub" style="padding:0 4px">Suggestions</div>
+            <div class="card"><div class="row"><span>🏛</span><div><div class="h" style="font-size:12px">Al-Kindi Grand Hall</div><div class="sub">Capacity 400</div></div></div></div>
+            <div class="card"><div class="row"><span>🎤</span><div><div class="h" style="font-size:12px">Al-Farabi Seminar Room</div><div class="sub">Capacity 80</div></div></div></div>
+            <div class="sub" style="padding:0 4px;margin-top:6px">Recent</div>
+            <div class="card"><div class="row"><span>🕘</span><div class="h" style="font-size:12px">Capacity ≥ 200</div></div></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Empty -->
+    <div class="frame">
+      <header><span>Guest Home · No results</span><span class="tag">Empty</span></header>
+      <div class="device">
+        <div class="phone">
+          <div class="statusbar"><span>9:41</span><span>HallMaster</span></div>
+          <div class="appbar"><span class="title">HallMaster</span><div><span class="ico">⚙</span></div></div>
+          <div class="body">
+            <div class="searchbar"><span>🔍</span><span>“rooftop tent”</span></div>
+            <div class="filterrow"><div class="fchip sel">Rooftop</div><div class="fchip">× clear</div></div>
+            <div class="card" style="padding:24px 12px;align-items:center;text-align:center">
+              <div class="empty-illus">🔍</div>
+              <div class="h" style="text-align:center">No halls match that search</div>
+              <div class="sub" style="text-align:center">Try a different keyword or remove filters.</div>
+              <div class="btn outline">Clear filters</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <div class="annot">
+    <b>Annotations · Guest Home</b><br>
+    • Guest can <i>view</i> halls but every <code>Book</code>-style CTA routes to <code>/login</code> via role redirect in <code>router.dart</code>.<br>
+    • Search is client-side over <code>hallRepository.list()</code>; debounce 200 ms.<br>
+    • Bottom nav shows “Sign in” to make conversion obvious.
+  </div>
+</section>
+
+<!-- ================= AUTH ================= -->
+<section class="chapter" id="auth">
+  <h2>3 · Login &amp; Register</h2>
+  <p class="lede">Single screen with a segmented control (Login / Register) to cut cognitive load. Rate limiter is surfaced — not silent.</p>
+
+  <div class="wireboard">
+
+    <div class="frame">
+      <header><span>Login · Default</span><span class="tag">Mobile</span></header>
+      <div class="device">
+        <div class="phone">
+          <div class="statusbar"><span>9:41</span><span>Sign in</span></div>
+          <div class="appbar"><span class="title">Sign in</span><div><span class="ico">←</span></div></div>
+          <div class="body" style="padding:14px">
+            <div class="label">HallMaster Enterprise</div>
+            <div class="h" style="font-size:16px">Welcome back</div>
+            <div class="sub">Sign in to book halls and track requests.</div>
+            <div style="height:6px"></div>
+            <div class="tabs" style="border-radius:8px;border:1px solid var(--line);overflow:hidden">
+              <div class="tab active">Login</div>
+              <div class="tab">Register</div>
+            </div>
+            <div class="fieldgroup">
+              <div class="floatlabel">Email</div>
+              <div class="input">name@uni.edu</div>
+            </div>
+            <div class="fieldgroup">
+              <div class="floatlabel">Password</div>
+              <div class="input">••••••••  <span>👁</span></div>
+            </div>
+            <div class="row" style="display:flex;justify-content:space-between;font-size:10px"><span>☐ Remember me</span><span style="color:var(--accent)">Forgot?</span></div>
+            <div class="btn block">Sign in</div>
+            <div class="divider"></div>
+            <div class="sub" style="text-align:center">Protected by rate limiting · 5 tries / 5 min</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="frame">
+      <header><span>Login · Validation error</span><span class="tag">Error</span></header>
+      <div class="device">
+        <div class="phone">
+          <div class="statusbar"><span>9:41</span><span>Sign in</span></div>
+          <div class="appbar"><span class="title">Sign in</span><div><span class="ico">←</span></div></div>
+          <div class="body" style="padding:14px">
+            <div class="banner err"><span>⚠</span><span>Incorrect email or password. 3 attempts remaining.</span></div>
+            <div class="fieldgroup">
+              <div class="floatlabel" style="color:var(--err)">Email</div>
+              <div class="input err">user@uni</div>
+              <div class="sub" style="color:var(--err);padding-left:2px;margin-top:4px">Please enter a valid email address.</div>
+            </div>
+            <div class="fieldgroup">
+              <div class="floatlabel" style="color:var(--err)">Password</div>
+              <div class="input err">••• <span>👁</span></div>
+              <div class="sub" style="color:var(--err);padding-left:2px;margin-top:4px">Password must be at least 8 characters.</div>
+            </div>
+            <div class="btn block" style="opacity:.55">Sign in</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="frame">
+      <header><span>Login · Rate limited</span><span class="tag">Blocked</span></header>
+      <div class="device">
+        <div class="phone">
+          <div class="statusbar"><span>9:41</span><span>Sign in</span></div>
+          <div class="appbar"><span class="title">Sign in</span><div><span class="ico">←</span></div></div>
+          <div class="body" style="padding:14px">
+            <div class="banner err"><span>🔒</span><span><b>Too many attempts.</b> Try again in 4 min 38 s.</span></div>
+            <div class="input" style="opacity:.5">name@uni.edu</div>
+            <div class="input" style="opacity:.5">••••••••</div>
+            <div class="btn block" style="opacity:.3">Sign in</div>
+            <div class="sub" style="text-align:center">Need help? Contact facilities@uni.edu</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="frame">
+      <header><span>Register · Default</span><span class="tag">Mobile</span></header>
+      <div class="device">
+        <div class="phone">
+          <div class="statusbar"><span>9:41</span><span>Sign in</span></div>
+          <div class="appbar"><span class="title">Sign in</span><div><span class="ico">←</span></div></div>
+          <div class="body" style="padding:14px">
+            <div class="tabs" style="border-radius:8px;border:1px solid var(--line);overflow:hidden">
+              <div class="tab">Login</div>
+              <div class="tab active">Register</div>
+            </div>
+            <div class="fieldgroup"><div class="floatlabel">Full name</div><div class="input">Ahmad bin Yusof</div></div>
+            <div class="fieldgroup"><div class="floatlabel">Email</div><div class="input">ahmad@uni.edu</div></div>
+            <div class="fieldgroup"><div class="floatlabel">Password</div><div class="input">••••••••</div>
+              <div class="progress" style="margin-top:6px"><div class="bar" style="width:70%;background:#9A5A00"></div></div>
+              <div class="sub" style="margin-top:4px">Medium · add a number and a symbol</div>
+            </div>
+            <div class="fieldgroup"><div class="floatlabel">Confirm password</div><div class="input">••••••••</div></div>
+            <div class="btn block">Create account</div>
+            <div class="sub" style="text-align:center">By registering you agree to the booking policy.</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <div class="annot">
+    <b>Annotations · Auth</b><br>
+    • Rate limiter (<code>LoginRateLimiter</code>) surfaces countdown; do not fail silently.<br>
+    • Role routing happens after success: admin → <code>/admin</code>, user → <code>/user</code>.<br>
+    • Password field shows strength meter mid-fi; low-fi keeps just the input.
+  </div>
+</section>
+
+<!-- ================= USER HOME ================= -->
+<section class="chapter" id="user">
+  <h2>4 · User Home</h2>
+  <p class="lede">Hero → metrics → recent bookings. Book Now is the primary action everywhere.</p>
+
+  <div class="wireboard">
+
+    <div class="frame">
+      <header><span>User Home · Default</span><span class="tag">Mobile</span></header>
+      <div class="device">
+        <div class="phone">
+          <div class="statusbar"><span>9:41</span><span>Welcome</span></div>
+          <div class="appbar"><span class="title">Hallo, Ahmad</span><div><span class="ico">🔔</span></div></div>
+          <div class="body">
+            <div class="hero">
+              <div class="label" style="color:#bcd3f0">Your workspace</div>
+              <div class="h">Hello, Ahmad</div>
+              <div class="sub">Review statuses · submit requests · keep aligned.</div>
+              <div style="height:8px"></div>
+              <div style="display:flex;gap:6px"><div class="btn outline" style="background:rgba(255,255,255,.15);color:#fff;border-color:rgba(255,255,255,.3)">+ New booking</div><div class="btn outline" style="background:transparent;color:#fff;border-color:rgba(255,255,255,.3)">My bookings</div></div>
+            </div>
+            <div class="grid3">
+              <div class="metric"><span class="chip info" style="align-self:flex-start">TOTAL</span><div class="num">7</div><div class="lbl">Bookings</div></div>
+              <div class="metric"><span class="chip warn" style="align-self:flex-start">PEND</span><div class="num">2</div><div class="lbl">Pending</div></div>
+              <div class="metric"><span class="chip ok" style="align-self:flex-start">APPR</span><div class="num">4</div><div class="lbl">Approved</div></div>
+            </div>
+            <div class="card">
+              <div class="row" style="justify-content:space-between"><div class="h">Recent bookings</div><div class="sub" style="color:var(--accent)">View all →</div></div>
+              <div class="divider"></div>
+              <div class="row"><div style="flex:1"><div class="h" style="font-size:12px">Al-Kindi Grand Hall</div><div class="sub">Mon 21 Apr · 09:00–12:00</div></div><span class="chip ok">APPROVED</span></div>
+              <div class="divider"></div>
+              <div class="row"><div style="flex:1"><div class="h" style="font-size:12px">Ibn Sina Aud.</div><div class="sub">Wed 23 Apr · 14:00–16:00</div></div><span class="chip warn">PENDING</span></div>
+              <div class="divider"></div>
+              <div class="row"><div style="flex:1"><div class="h" style="font-size:12px">Al-Farabi Room</div><div class="sub">Fri 25 Apr · 10:00–11:00</div></div><span class="chip err">CANCELLED</span></div>
+            </div>
+          </div>
+          <div class="bottomnav">
+            <div class="nav active">🏠<span>Home</span><span class="dot"></span></div>
+            <div class="nav">＋<span>Book</span></div>
+            <div class="nav">📋<span>Mine</span></div>
+            <div class="nav">👤<span>Account</span></div>
+          </div>
+          <div class="fab">＋</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="frame">
+      <header><span>User Home · Loading</span><span class="tag">Loading</span></header>
+      <div class="device">
+        <div class="phone">
+          <div class="statusbar"><span>9:41</span><span>Welcome</span></div>
+          <div class="appbar"><span class="title">Hallo, Ahmad</span><div><span class="ico">🔔</span></div></div>
+          <div class="body">
+            <div class="hero"><div class="skel" style="width:50%;background:rgba(255,255,255,.25)"></div><div style="height:6px"></div><div class="skel" style="width:90%;background:rgba(255,255,255,.25)"></div><div style="height:6px"></div><div class="skel long" style="background:rgba(255,255,255,.25)"></div></div>
+            <div class="grid3">
+              <div class="metric"><div class="skel short"></div><div class="skel med" style="height:20px"></div></div>
+              <div class="metric"><div class="skel short"></div><div class="skel med" style="height:20px"></div></div>
+              <div class="metric"><div class="skel short"></div><div class="skel med" style="height:20px"></div></div>
+            </div>
+            <div class="card"><div class="skel med"></div><div class="skel long"></div><div class="skel long"></div><div class="skel long"></div></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="frame">
+      <header><span>User Home · Empty / first-time</span><span class="tag">Empty</span></header>
+      <div class="device">
+        <div class="phone">
+          <div class="statusbar"><span>9:41</span><span>Welcome</span></div>
+          <div class="appbar"><span class="title">Hallo, Ahmad</span><div><span class="ico">🔔</span></div></div>
+          <div class="body">
+            <div class="hero"><div class="label" style="color:#bcd3f0">Get started</div><div class="h">Welcome, Ahmad</div><div class="sub">You have no bookings yet. Let’s create your first.</div><div style="height:8px"></div><div class="btn" style="background:#fff;color:var(--accent)">+ Create first booking</div></div>
+            <div class="card" style="align-items:center;padding:20px">
+              <div class="empty-illus">📅</div>
+              <div class="h" style="text-align:center">No recent activity</div>
+              <div class="sub" style="text-align:center">Requests you submit will appear here.</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="frame">
+      <header><span>User Home · Tablet / Expanded</span><span class="tag">Responsive</span></header>
+      <div class="device">
+        <div class="tablet">
+          <div class="statusbar"><span>9:41</span><span>Tablet view</span></div>
+          <div style="display:flex;flex:1">
+            <div style="width:120px;background:#0B2753;color:#fff;padding:12px 8px;display:flex;flex-direction:column;gap:8px;font-size:10px">
+              <div style="font-weight:700">HM</div>
+              <div class="divider" style="background:#1a3e80"></div>
+              <div style="padding:6px 8px;background:#0B4EA2;border-radius:6px">🏠 Home</div>
+              <div style="padding:6px 8px">＋ Book</div>
+              <div style="padding:6px 8px">📋 Mine</div>
+              <div style="padding:6px 8px">👤 Account</div>
+            </div>
+            <div class="body" style="flex:1">
+              <div class="hero"><div class="h">Hello, Ahmad</div><div class="sub">Your operational snapshot.</div></div>
+              <div class="grid3">
+                <div class="metric"><div class="num">7</div><div class="lbl">Bookings</div></div>
+                <div class="metric"><div class="num">2</div><div class="lbl">Pending</div></div>
+                <div class="metric"><div class="num">4</div><div class="lbl">Approved</div></div>
+              </div>
+              <div class="card"><div class="h">Recent bookings</div><div class="sub">Cards flow in 2-col on ≥ medium.</div></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <div class="annot"><b>Annotations · User Home</b><br>• Metric chips count <code>bookings.length</code> and filter by <code>BookingStatus</code>.<br>• Hero CTA goes to <code>/booking/new</code>; secondary to <code>/booking/my</code>.<br>• On tablet+, a persistent nav rail replaces the bottom bar.</div>
+</section>
+
+<!-- ================= CREATE BOOKING ================= -->
+<section class="chapter" id="booking">
+  <h2>5 · Create Booking</h2>
+  <p class="lede">Three-step flow: pick hall → pick time → confirm. Every step exposes conflict logic inline.</p>
+
+  <div class="wireboard">
+
+    <div class="frame">
+      <header><span>Step 1 · Pick hall</span><span class="tag">Step 1/3</span></header>
+      <div class="device">
+        <div class="phone">
+          <div class="statusbar"><span>9:41</span><span>New booking</span></div>
+          <div class="appbar"><span class="title">New booking</span><div><span class="ico">✕</span></div></div>
+          <div class="body">
+            <div class="progress"><div class="bar" style="width:33%"></div></div>
+            <div class="dot-nav"><div class="d active"></div><div class="d"></div><div class="d"></div></div>
+            <div class="label">Step 1 of 3</div>
+            <div class="h">Pick a hall</div>
+            <div class="sub">Filter by capacity or type if needed.</div>
+            <div class="searchbar"><span>🔍</span><span>Search halls…</span></div>
+            <div class="filterrow"><div class="fchip sel">All</div><div class="fchip">Auditorium</div><div class="fchip">Seminar</div></div>
+            <div class="card hallcard" style="border:2px solid var(--accent)"><div class="img">🏛</div><div style="flex:1"><div class="h">Al-Kindi Grand Hall</div><div class="sub">Capacity 400 · Stage</div><div class="chip brand">Selected ✓</div></div></div>
+            <div class="card hallcard"><div class="img" style="background:linear-gradient(135deg,#f2c7a2,#d88b45)">🎤</div><div style="flex:1"><div class="h">Ibn Sina Aud.</div><div class="sub">Capacity 250</div></div></div>
+            <div class="btn block">Continue</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="frame">
+      <header><span>Step 2 · Pick date &amp; time</span><span class="tag">Step 2/3</span></header>
+      <div class="device">
+        <div class="phone">
+          <div class="statusbar"><span>9:41</span><span>New booking</span></div>
+          <div class="appbar"><span class="title">Al-Kindi · Time</span><div><span class="ico">←</span></div></div>
+          <div class="body">
+            <div class="progress"><div class="bar" style="width:66%"></div></div>
+            <div class="dot-nav"><div class="d"></div><div class="d active"></div><div class="d"></div></div>
+            <div class="label">Step 2 of 3</div>
+            <div class="h">Choose a slot</div>
+            <div class="sub">Busy blocks show existing bookings.</div>
+            <div class="input"><span>📅 Mon, 21 Apr 2026</span><span>▾</span></div>
+            <div class="card">
+              <div class="sub" style="margin-bottom:4px">Day timeline</div>
+              <div class="timeline">
+                <div class="slot"><span>08</span><div class="bar"></div></div>
+                <div class="slot"><span>10</span><div class="bar"><div class="fill"></div></div></div>
+                <div class="slot"><span>12</span><div class="bar"><div class="busy"></div></div></div>
+                <div class="slot"><span>14</span><div class="bar"></div></div>
+                <div class="slot"><span>16</span><div class="bar"></div></div>
+              </div>
+              <div class="sub" style="margin-top:6px"><span class="chip brand">You</span> <span class="chip err">Busy</span></div>
+            </div>
+            <div class="grid2"><div class="fieldgroup"><div class="floatlabel">Start</div><div class="input">09:00</div></div><div class="fieldgroup"><div class="floatlabel">End</div><div class="input">12:00</div></div></div>
+            <div class="btn block">Continue</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="frame">
+      <header><span>Step 2 · Conflict detected</span><span class="tag">Error</span></header>
+      <div class="device">
+        <div class="phone">
+          <div class="statusbar"><span>9:41</span><span>New booking</span></div>
+          <div class="appbar"><span class="title">Al-Kindi · Time</span><div><span class="ico">←</span></div></div>
+          <div class="body">
+            <div class="banner err"><span>⛔</span><span><b>Conflict:</b> This hall is booked 12:00–13:00 on Mon 21 Apr. Choose a different slot.</span></div>
+            <div class="card">
+              <div class="timeline"><div class="slot"><span>12</span><div class="bar"><div class="busy" style="left:0;width:100%"></div></div></div></div>
+              <div class="sub">Conflicts with booking #B-2041.</div>
+            </div>
+            <div class="grid2"><div class="fieldgroup"><div class="floatlabel" style="color:var(--err)">Start</div><div class="input err">11:00</div></div><div class="fieldgroup"><div class="floatlabel" style="color:var(--err)">End</div><div class="input err">13:00</div></div></div>
+            <div class="sub">Suggested: <span style="color:var(--accent);font-weight:600">14:00–16:00</span> · <span style="color:var(--accent);font-weight:600">08:00–11:00</span></div>
+            <div class="btn block" style="opacity:.4">Continue</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="frame">
+      <header><span>Step 2 · Invalid range</span><span class="tag">Error</span></header>
+      <div class="device">
+        <div class="phone">
+          <div class="statusbar"><span>9:41</span><span>New booking</span></div>
+          <div class="appbar"><span class="title">Al-Kindi · Time</span><div><span class="ico">←</span></div></div>
+          <div class="body">
+            <div class="banner err"><span>⚠</span><span>Start time must be before end time.</span></div>
+            <div class="grid2"><div class="fieldgroup"><div class="floatlabel" style="color:var(--err)">Start</div><div class="input err">14:00</div></div><div class="fieldgroup"><div class="floatlabel" style="color:var(--err)">End</div><div class="input err">10:00</div></div></div>
+            <div class="btn block" style="opacity:.4">Continue</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="frame">
+      <header><span>Step 3 · Review &amp; submit</span><span class="tag">Step 3/3</span></header>
+      <div class="device">
+        <div class="phone">
+          <div class="statusbar"><span>9:41</span><span>Review</span></div>
+          <div class="appbar"><span class="title">Review request</span><div><span class="ico">←</span></div></div>
+          <div class="body">
+            <div class="progress"><div class="bar" style="width:100%"></div></div>
+            <div class="dot-nav"><div class="d"></div><div class="d"></div><div class="d active"></div></div>
+            <div class="card">
+              <div class="h">Al-Kindi Grand Hall</div>
+              <div class="sub">Capacity 400</div>
+              <div class="divider"></div>
+              <div class="row" style="justify-content:space-between"><span class="sub">Date</span><span class="h" style="font-size:12px">Mon, 21 Apr 2026</span></div>
+              <div class="row" style="justify-content:space-between"><span class="sub">Time</span><span class="h" style="font-size:12px">09:00–12:00</span></div>
+              <div class="row" style="justify-content:space-between"><span class="sub">Duration</span><span class="h" style="font-size:12px">3 hours</span></div>
+            </div>
+            <div class="fieldgroup"><div class="floatlabel">Purpose (optional)</div><div class="input">Research symposium</div></div>
+            <div class="card" style="background:var(--info-bg);border-color:#b7c8e6"><div class="sub" style="color:var(--info)"><b>Note:</b> Request will be Pending until Admin approves. You’ll be notified.</div></div>
+            <div class="btn block">Submit request</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="frame">
+      <header><span>Booking · Success</span><span class="tag">Success</span></header>
+      <div class="device">
+        <div class="phone">
+          <div class="statusbar"><span>9:41</span><span>Submitted</span></div>
+          <div class="appbar"><span class="title">Done</span><div></div></div>
+          <div class="body" style="justify-content:center;align-items:center">
+            <div class="empty-illus" style="background:var(--ok-bg);color:var(--ok);width:72px;height:72px;font-size:36px">✓</div>
+            <div class="h" style="font-size:16px;text-align:center">Request submitted</div>
+            <div class="sub" style="text-align:center;max-width:200px">Reference #B-2093 · Admin will review within 24 h.</div>
+            <div style="height:8px"></div>
+            <div class="btn block" style="width:180px">View my bookings</div>
+            <div class="btn outline" style="width:180px">Make another</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <div class="annot"><b>Annotations · Create Booking</b><br>• Conflict detection fires on field <i>blur</i> and on submit (<code>bookingRepository.hasConflict()</code>).<br>• Start must be strictly &lt; End; hour granularity only (<code>int startHour</code>, <code>int endHour</code>).<br>• Submitting creates a booking with <code>status = pending</code>. No auto-approve.</div>
+</section>
+
+<!-- ================= MY BOOKINGS ================= -->
+<section class="chapter" id="mybookings">
+  <h2>6 · My Bookings</h2>
+  <p class="lede">Scan-first list. Status chips, date, and hall above all else. Swipe/tap row opens detail.</p>
+
+  <div class="wireboard">
+
+    <div class="frame">
+      <header><span>My Bookings · Default</span><span class="tag">Mobile</span></header>
+      <div class="device">
+        <div class="phone">
+          <div class="statusbar"><span>9:41</span><span>My bookings</span></div>
+          <div class="appbar"><span class="title">My bookings</span><div><span class="ico">🔎</span></div></div>
+          <div class="body">
+            <div class="tabs" style="border-radius:99px;border:1px solid var(--line);background:#fff;padding:2px">
+              <div class="tab active" style="border-radius:99px;border-bottom:0">All <span class="badge-count" style="background:var(--accent)">7</span></div>
+              <div class="tab" style="border-bottom:0">Pending 2</div>
+              <div class="tab" style="border-bottom:0">Past</div>
+            </div>
+            <div class="card"><div class="row" style="justify-content:space-between"><div><div class="h" style="font-size:12px">Al-Kindi Grand Hall</div><div class="sub">Mon 21 Apr · 09:00–12:00</div></div><span class="chip ok">APPR</span></div></div>
+            <div class="card"><div class="row" style="justify-content:space-between"><div><div class="h" style="font-size:12px">Ibn Sina Aud.</div><div class="sub">Wed 23 Apr · 14:00–16:00</div></div><span class="chip warn">PEND</span></div></div>
+            <div class="card"><div class="row" style="justify-content:space-between"><div><div class="h" style="font-size:12px">Al-Farabi Room</div><div class="sub">Fri 25 Apr · 10:00–11:00</div></div><span class="chip err">CANC</span></div></div>
+            <div class="card"><div class="row" style="justify-content:space-between"><div><div class="h" style="font-size:12px">Al-Razi Lab</div><div class="sub">Sat 12 Apr · 09:00–11:00</div></div><span class="chip info">DONE</span></div></div>
+          </div>
+          <div class="fab">＋</div>
+          <div class="bottomnav">
+            <div class="nav">🏠<span>Home</span></div>
+            <div class="nav">＋<span>Book</span></div>
+            <div class="nav active">📋<span>Mine</span><span class="dot"></span></div>
+            <div class="nav">👤<span>Account</span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="frame">
+      <header><span>My Bookings · Empty</span><span class="tag">Empty</span></header>
+      <div class="device">
+        <div class="phone">
+          <div class="statusbar"><span>9:41</span><span>My bookings</span></div>
+          <div class="appbar"><span class="title">My bookings</span><div></div></div>
+          <div class="body" style="justify-content:center;align-items:center">
+            <div class="empty-illus">📋</div>
+            <div class="h" style="text-align:center">No bookings yet</div>
+            <div class="sub" style="text-align:center;max-width:180px">When you create a request, it will show up here with its live status.</div>
+            <div class="btn" style="width:180px">+ Create booking</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="frame">
+      <header><span>My Bookings · Detail / Actions</span><span class="tag">Detail</span></header>
+      <div class="device">
+        <div class="phone">
+          <div class="statusbar"><span>9:41</span><span>Booking</span></div>
+          <div class="appbar"><span class="title">#B-2093</span><div><span class="ico">⋯</span></div></div>
+          <div class="body">
+            <div class="card">
+              <div class="row" style="justify-content:space-between"><div class="h">Al-Kindi Grand Hall</div><span class="chip warn">PENDING</span></div>
+              <div class="sub">Capacity 400 · Stage</div>
+              <div class="divider"></div>
+              <div class="row" style="justify-content:space-between"><span class="sub">Date</span><span>Mon, 21 Apr</span></div>
+              <div class="row" style="justify-content:space-between"><span class="sub">Time</span><span>09:00–12:00</span></div>
+              <div class="row" style="justify-content:space-between"><span class="sub">Submitted</span><span>19 Apr</span></div>
+            </div>
+            <div class="btn outline block">✎ Edit booking</div>
+            <div class="btn block" style="background:var(--err)">Cancel booking</div>
+            <div class="sub" style="text-align:center">Only <b>Pending</b> or <b>Approved (future)</b> bookings can be edited.</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="frame">
+      <header><span>My Bookings · Error (offline)</span><span class="tag">Error</span></header>
+      <div class="device">
+        <div class="phone">
+          <div class="statusbar"><span>9:41</span><span>My bookings</span></div>
+          <div class="appbar"><span class="title">My bookings</span><div></div></div>
+          <div class="body" style="justify-content:center;align-items:center">
+            <div class="empty-illus" style="background:var(--err-bg);color:var(--err)">⚠</div>
+            <div class="h" style="text-align:center">Can’t reach the server</div>
+            <div class="sub" style="text-align:center;max-width:200px">Check your connection — we’ll reload your bookings when you retry.</div>
+            <div class="btn" style="width:160px">Try again</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <div class="annot"><b>Annotations · My Bookings</b><br>• Edit is disabled for <code>cancelled</code> and past <code>completed</code> bookings (greyed action + tooltip).<br>• Cancel shows confirmation dialog (see Dialogs).<br>• Tabs count <code>bookings.where(status == x).length</code> live.</div>
+</section>
+
+<!-- ================= ADMIN ================= -->
+<section class="chapter" id="admin">
+  <h2>7 · Admin Dashboard</h2>
+  <p class="lede">Three tabs: Bookings, Halls, Users. Scanning first, drilling second. Bulk-friendly on tablet.</p>
+
+  <div class="wireboard">
+
+    <div class="frame">
+      <header><span>Admin · Bookings tab</span><span class="tag">Mobile</span></header>
+      <div class="device">
+        <div class="phone">
+          <div class="statusbar"><span>9:41</span><span>Admin</span></div>
+          <div class="appbar"><span class="title">Admin console</span><div><span class="ico">🔎</span></div></div>
+          <div class="tabs">
+            <div class="tab active">Bookings <span class="badge-count">12</span></div>
+            <div class="tab">Halls</div>
+            <div class="tab">Users</div>
+          </div>
+          <div class="body">
+            <div class="grid3">
+              <div class="metric"><span class="chip warn" style="align-self:flex-start">PEND</span><div class="num">5</div><div class="lbl">Awaiting review</div></div>
+              <div class="metric"><span class="chip ok" style="align-self:flex-start">TODAY</span><div class="num">3</div><div class="lbl">Today</div></div>
+              <div class="metric"><span class="chip err" style="align-self:flex-start">CONFL</span><div class="num">1</div><div class="lbl">Conflicts</div></div>
+            </div>
+            <div class="filterrow"><div class="fchip sel">Pending</div><div class="fchip">All</div><div class="fchip">Approved</div><div class="fchip">Cancelled</div></div>
+            <div class="card">
+              <div class="row" style="justify-content:space-between"><div><div class="h" style="font-size:12px">Al-Kindi · Mon 21 Apr</div><div class="sub">Ahmad Y. · 09:00–12:00</div></div><span class="chip warn">PEND</span></div>
+              <div class="btn row" style="margin-top:4px"><div class="btn" style="flex:1;padding:6px">Approve</div><div class="btn outline" style="flex:1;padding:6px">Reject</div></div>
+            </div>
+            <div class="card">
+              <div class="row" style="justify-content:space-between"><div><div class="h" style="font-size:12px">Ibn Sina · Wed 23 Apr</div><div class="sub">Siti M. · 14:00–16:00</div></div><span class="chip warn">PEND</span></div>
+              <div class="btn row" style="margin-top:4px"><div class="btn" style="flex:1;padding:6px">Approve</div><div class="btn outline" style="flex:1;padding:6px">Reject</div></div>
+            </div>
+          </div>
+          <div class="bottomnav">
+            <div class="nav active">📋<span>Bookings</span><span class="dot"></span></div>
+            <div class="nav">🏛<span>Halls</span></div>
+            <div class="nav">👥<span>Users</span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="frame">
+      <header><span>Admin · Halls tab</span><span class="tag">Mobile</span></header>
+      <div class="device">
+        <div class="phone">
+          <div class="statusbar"><span>9:41</span><span>Admin · Halls</span></div>
+          <div class="appbar"><span class="title">Halls</span><div><span class="ico">＋</span></div></div>
+          <div class="tabs"><div class="tab">Bookings</div><div class="tab active">Halls</div><div class="tab">Users</div></div>
+          <div class="body">
+            <div class="searchbar"><span>🔍</span><span>Search halls…</span></div>
+            <div class="card hallcard"><div class="img">🏛</div><div style="flex:1"><div class="row" style="justify-content:space-between"><div class="h" style="font-size:12px">Al-Kindi Grand Hall</div><span class="chip ok">ACTIVE</span></div><div class="sub">Capacity 400 · 18 active bookings</div><div class="btn row" style="margin-top:4px"><div class="btn outline" style="flex:1;padding:4px 6px">Edit</div><div class="btn outline" style="flex:1;padding:4px 6px;color:var(--err);border-color:#f3b5b0">Delete</div></div></div></div>
+            <div class="card hallcard"><div class="img" style="background:linear-gradient(135deg,#f2c7a2,#d88b45)">🎤</div><div style="flex:1"><div class="row" style="justify-content:space-between"><div class="h" style="font-size:12px">Ibn Sina Aud.</div><span class="chip ok">ACTIVE</span></div><div class="sub">Capacity 250 · 7 active</div></div></div>
+            <div class="card hallcard" style="opacity:.6"><div class="img" style="background:#cfd6e4">📚</div><div style="flex:1"><div class="row" style="justify-content:space-between"><div class="h" style="font-size:12px">Library Meeting Rm</div><span class="chip" style="background:#e5e7eb;color:#4b5563">INACTIVE</span></div><div class="sub">Capacity 20 · 0 active</div></div></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="frame">
+      <header><span>Admin · Users tab</span><span class="tag">Mobile</span></header>
+      <div class="device">
+        <div class="phone">
+          <div class="statusbar"><span>9:41</span><span>Admin · Users</span></div>
+          <div class="appbar"><span class="title">Users</span><div><span class="ico">🔎</span></div></div>
+          <div class="tabs"><div class="tab">Bookings</div><div class="tab">Halls</div><div class="tab active">Users</div></div>
+          <div class="body">
+            <div class="filterrow"><div class="fchip sel">All 134</div><div class="fchip">Admins 3</div><div class="fchip">Users 131</div></div>
+            <div class="card"><div class="userrow"><div class="avatar">AY</div><div style="flex:1"><div class="h" style="font-size:12px">Ahmad Yusof</div><div class="sub">ahmad@uni.edu · 7 bookings</div></div><span class="chip brand">USER</span></div></div>
+            <div class="card"><div class="userrow"><div class="avatar" style="background:var(--warn-bg);color:var(--warn)">SM</div><div style="flex:1"><div class="h" style="font-size:12px">Siti Marlina</div><div class="sub">siti@uni.edu · 3 bookings</div></div><span class="chip warn">ADMIN</span></div></div>
+            <div class="card"><div class="userrow"><div class="avatar" style="background:#e5e7eb;color:#6b7280">KN</div><div style="flex:1"><div class="h" style="font-size:12px">Khalid N.</div><div class="sub">khalid@uni.edu · 0 bookings</div></div><span class="chip" style="background:#e5e7eb;color:#4b5563">INACTIVE</span></div></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="frame">
+      <header><span>Admin · Desktop / Expanded</span><span class="tag">Responsive</span></header>
+      <div class="device">
+        <div class="tablet" style="max-width:620px">
+          <div class="statusbar"><span>9:41</span><span>Admin console · Desktop</span></div>
+          <div style="display:flex;flex:1">
+            <div style="width:120px;background:#0B2753;color:#fff;padding:12px 8px;display:flex;flex-direction:column;gap:6px;font-size:10px">
+              <div style="font-weight:700">HM · Admin</div>
+              <div class="divider" style="background:#1a3e80"></div>
+              <div style="padding:6px 8px;background:#0B4EA2;border-radius:6px">📋 Bookings</div>
+              <div style="padding:6px 8px">🏛 Halls</div>
+              <div style="padding:6px 8px">👥 Users</div>
+              <div style="padding:6px 8px">📈 Reports</div>
+            </div>
+            <div class="body" style="flex:1">
+              <div class="grid3">
+                <div class="metric"><div class="num">12</div><div class="lbl">Pending</div></div>
+                <div class="metric"><div class="num">46</div><div class="lbl">This week</div></div>
+                <div class="metric"><div class="num">1</div><div class="lbl">Conflicts</div></div>
+              </div>
+              <div class="card">
+                <div class="row" style="justify-content:space-between"><div class="h">Queue</div><div class="sub">Sort: Oldest first</div></div>
+                <div class="divider"></div>
+                <div class="row" style="justify-content:space-between"><span>Al-Kindi · Mon 09–12 · Ahmad Y.</span><span><span class="chip warn">PEND</span></span></div>
+                <div class="row" style="justify-content:space-between"><span>Ibn Sina · Wed 14–16 · Siti M.</span><span><span class="chip warn">PEND</span></span></div>
+                <div class="row" style="justify-content:space-between"><span>Al-Farabi · Fri 10–11 · Noor L.</span><span><span class="chip ok">APPR</span></span></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <div class="annot"><b>Annotations · Admin</b><br>• Tabs preserve state on navigation (Riverpod keepAlive).<br>• Approve/Reject inline actions reduce taps vs modal.<br>• A hall with active bookings cannot be deleted (see Delete dialog).<br>• Role badges are sourced from <code>User.role</code>.</div>
+</section>
+
+<!-- ================= DIALOGS ================= -->
+<section class="chapter" id="dialogs">
+  <h2>8 · Dialogs &amp; Modals</h2>
+  <p class="lede">Every destructive or cross-cutting action uses a modal with a clear primary/secondary pair.</p>
+
+  <div class="wireboard">
+
+    <div class="frame">
+      <header><span>User · Edit booking</span><span class="tag">Modal</span></header>
+      <div class="device">
+        <div class="phone">
+          <div class="statusbar"><span>9:41</span><span>Edit</span></div>
+          <div class="appbar"><span class="title">Edit booking</span><div><span class="ico">✕</span></div></div>
+          <div class="body" style="position:relative;padding:0">
+            <div class="overlay" style="position:static">
+              <div class="modal" style="max-width:260px">
+                <div class="mhead"><div class="h" style="font-size:13px">Edit request #B-2093</div><div class="sub">✕</div></div>
+                <div class="mbody">
+                  <div class="fieldgroup"><div class="floatlabel">Hall</div><div class="input">Al-Kindi Grand Hall</div></div>
+                  <div class="fieldgroup"><div class="floatlabel">Date</div><div class="input">Mon, 21 Apr</div></div>
+                  <div class="grid2">
+                    <div class="fieldgroup"><div class="floatlabel">Start</div><div class="input">09:00</div></div>
+                    <div class="fieldgroup"><div class="floatlabel">End</div><div class="input">12:00</div></div>
+                  </div>
+                  <div class="banner warn"><span>ⓘ</span><span>Editing will re-check conflicts and reset to <b>Pending</b>.</span></div>
+                </div>
+                <div class="mfoot"><div class="btn outline">Cancel</div><div class="btn">Save changes</div></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="frame">
+      <header><span>Admin · Edit booking</span><span class="tag">Modal</span></header>
+      <div class="device">
+        <div class="phone">
+          <div class="statusbar"><span>9:41</span><span>Admin edit</span></div>
+          <div class="appbar"><span class="title">Review #B-2093</span><div><span class="ico">✕</span></div></div>
+          <div class="body" style="position:relative;padding:0">
+            <div class="overlay" style="position:static">
+              <div class="modal" style="max-width:260px">
+                <div class="mhead"><div><div class="h" style="font-size:13px">Review request</div><div class="sub">Ahmad Yusof · ahmad@uni.edu</div></div></div>
+                <div class="mbody">
+                  <div class="row" style="justify-content:space-between"><span class="sub">Hall</span><span>Al-Kindi</span></div>
+                  <div class="row" style="justify-content:space-between"><span class="sub">When</span><span>Mon 21 Apr · 09:00–12:00</span></div>
+                  <div class="fieldgroup"><div class="floatlabel">Decision</div><div class="input"><span>Approve ▾</span></div></div>
+                  <div class="fieldgroup"><div class="floatlabel">Admin note (optional)</div><div class="input">e.g. cleared with Facilities</div></div>
+                  <div class="banner ok"><span>✓</span><span>No conflicts detected.</span></div>
+                </div>
+                <div class="mfoot"><div class="btn outline" style="color:var(--err);border-color:#f3b5b0">Reject</div><div class="btn">Approve</div></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="frame">
+      <header><span>Admin · Add/Edit hall</span><span class="tag">Modal</span></header>
+      <div class="device">
+        <div class="phone">
+          <div class="statusbar"><span>9:41</span><span>Halls</span></div>
+          <div class="appbar"><span class="title">Add hall</span><div><span class="ico">✕</span></div></div>
+          <div class="body" style="position:relative;padding:0">
+            <div class="overlay" style="position:static">
+              <div class="modal" style="max-width:260px">
+                <div class="mhead"><div class="h" style="font-size:13px">Add hall</div></div>
+                <div class="mbody">
+                  <div class="fieldgroup"><div class="floatlabel">Name</div><div class="input">Al-Khawarizmi Lab</div></div>
+                  <div class="grid2">
+                    <div class="fieldgroup"><div class="floatlabel">Capacity</div><div class="input">80</div></div>
+                    <div class="fieldgroup"><div class="floatlabel">Type</div><div class="input">Lab ▾</div></div>
+                  </div>
+                  <div class="fieldgroup"><div class="floatlabel">Amenities</div><div class="input">Projector, Whiteboard, A/V</div></div>
+                  <div class="row" style="gap:6px"><span class="fchip sel">Active</span><span class="fchip">Inactive</span></div>
+                </div>
+                <div class="mfoot"><div class="btn outline">Cancel</div><div class="btn">Save hall</div></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="frame">
+      <header><span>Delete confirm · User cancel</span><span class="tag">Destructive</span></header>
+      <div class="device">
+        <div class="phone">
+          <div class="statusbar"><span>9:41</span><span>Confirm</span></div>
+          <div class="appbar"><span class="title">Cancel booking?</span><div></div></div>
+          <div class="body" style="position:relative;padding:0">
+            <div class="overlay" style="position:static">
+              <div class="modal" style="max-width:240px">
+                <div class="mbody" style="align-items:center;text-align:center">
+                  <div class="empty-illus" style="background:var(--err-bg);color:var(--err)">⚠</div>
+                  <div class="h" style="text-align:center">Cancel this booking?</div>
+                  <div class="sub" style="text-align:center">Al-Kindi · Mon 21 Apr · 09:00–12:00. This can’t be undone.</div>
+                </div>
+                <div class="mfoot" style="justify-content:center"><div class="btn outline">Keep</div><div class="btn danger">Cancel booking</div></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="frame">
+      <header><span>Delete hall · Blocked</span><span class="tag">Guard</span></header>
+      <div class="device">
+        <div class="phone">
+          <div class="statusbar"><span>9:41</span><span>Blocked</span></div>
+          <div class="appbar"><span class="title">Cannot delete</span><div></div></div>
+          <div class="body" style="position:relative;padding:0">
+            <div class="overlay" style="position:static">
+              <div class="modal" style="max-width:240px">
+                <div class="mbody" style="align-items:center;text-align:center">
+                  <div class="empty-illus" style="background:var(--warn-bg);color:var(--warn)">⛔</div>
+                  <div class="h" style="text-align:center">Hall still has 18 active bookings</div>
+                  <div class="sub" style="text-align:center">Deactivate it instead, or resolve active bookings first.</div>
+                </div>
+                <div class="mfoot" style="justify-content:center"><div class="btn outline">Close</div><div class="btn">Deactivate hall</div></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="frame">
+      <header><span>Success toast</span><span class="tag">Feedback</span></header>
+      <div class="device">
+        <div class="phone">
+          <div class="statusbar"><span>9:41</span><span>My bookings</span></div>
+          <div class="appbar"><span class="title">My bookings</span><div></div></div>
+          <div class="body">
+            <div class="card"><div class="row" style="justify-content:space-between"><div><div class="h" style="font-size:12px">Al-Kindi Grand Hall</div><div class="sub">Mon 21 Apr · 09:00–12:00</div></div><span class="chip ok">APPR</span></div></div>
+            <div class="card"><div class="row" style="justify-content:space-between"><div><div class="h" style="font-size:12px">Ibn Sina Aud.</div><div class="sub">Wed 23 Apr · 14:00–16:00</div></div><span class="chip err">CANC</span></div></div>
+          </div>
+          <div class="toast"><span style="color:#7cd2a7">✓</span><span style="flex:1">Booking cancelled.</span><span style="color:#bcd3f0;font-weight:600">Undo</span></div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <div class="annot"><b>Annotations · Dialogs</b><br>• Every destructive action has a named primary (<code>Cancel booking</code>, not <code>OK</code>).<br>• Admin-edit always shows conflict result inline.<br>• Hall delete is a guarded flow — active bookings block the action.<br>• Toast offers <code>Undo</code> for 6 s on cancel.</div>
+</section>
+
+<!-- ================= STATES MATRIX ================= -->
+<section class="chapter" id="states">
+  <h2>9 · State Matrix per Screen</h2>
+  <p class="lede">Every screen must have four baseline states. This is the production checklist.</p>
+  <table class="tokens-table">
+    <thead><tr><th>Screen</th><th>Default</th><th>Loading</th><th>Empty</th><th>Error</th><th>Success / Confirmation</th></tr></thead>
+    <tbody>
+      <tr><td>Guest Home</td><td>Search + halls list</td><td>Skeleton cards ×3</td><td>“No halls match”</td><td>Retry card</td><td>n/a</td></tr>
+      <tr><td>Login/Register</td><td>Form default</td><td>Button spinner</td><td>n/a</td><td>Field + banner errors, rate-limit banner</td><td>Route by role</td></tr>
+      <tr><td>User Home</td><td>Hero + metrics + recents</td><td>Skeletons</td><td>First-time empty</td><td>Data load error card</td><td>n/a</td></tr>
+      <tr><td>Create Booking · Step 1</td><td>Halls list</td><td>Skeletons</td><td>No halls</td><td>Load error</td><td>Selected chip</td></tr>
+      <tr><td>Create Booking · Step 2</td><td>Date + time picker</td><td>Timeline shimmer</td><td>No busy slots</td><td>Conflict / invalid-range banners</td><td>Valid chip</td></tr>
+      <tr><td>Create Booking · Step 3</td><td>Review card</td><td>Submit spinner</td><td>n/a</td><td>Submit failed</td><td>Success screen with ref #</td></tr>
+      <tr><td>My Bookings</td><td>Tabbed list</td><td>Skeleton list</td><td>No bookings yet</td><td>Offline card</td><td>Cancel-success toast</td></tr>
+      <tr><td>Admin · Bookings</td><td>Queue + filters</td><td>Skeleton rows</td><td>Queue clear</td><td>Load error</td><td>Approve/Reject toast</td></tr>
+      <tr><td>Admin · Halls</td><td>List + search</td><td>Skeletons</td><td>No halls</td><td>Load error</td><td>Hall saved toast</td></tr>
+      <tr><td>Admin · Users</td><td>List + filters</td><td>Skeletons</td><td>No users</td><td>Load error</td><td>Role change toast</td></tr>
+    </tbody>
+  </table>
+</section>
+
+<!-- ================= BUSINESS RULES ================= -->
+<section class="chapter" id="rules">
+  <h2>10 · Business Rules (Figma Annotation Layer)</h2>
+  <p class="lede">Paste each rule as a Figma sticky note on the relevant frame. They must be visible in the wireframe review.</p>
+
+  <div class="rulebox">
+    <h4>R1 · Conflict prevention</h4>
+    <ul>
+      <li>A booking cannot overlap another approved or pending booking for the same hall.</li>
+      <li>Overlap definition: <code>startA &lt; endB &amp;&amp; startB &lt; endA</code> (hour-level).</li>
+      <li>Show conflict <b>inline</b> at Step 2 and again on Submit.</li>
+    </ul>
+  </div>
+  <div class="rulebox">
+    <h4>R2 · Valid time range</h4>
+    <ul>
+      <li>Start hour must be strictly less than End hour.</li>
+      <li>Durations must be ≥ 1 hour.</li>
+      <li>Inline error field + disabled Continue CTA.</li>
+    </ul>
+  </div>
+  <div class="rulebox">
+    <h4>R3 · Edit permissions</h4>
+    <ul>
+      <li>User can edit only <b>Pending</b> or <b>Approved future</b> bookings.</li>
+      <li>Cancelled and past Completed bookings are read-only — Edit is hidden, Cancel is disabled.</li>
+      <li>Admin can edit any booking but sees audit note: “Edited by admin”.</li>
+    </ul>
+  </div>
+  <div class="rulebox">
+    <h4>R4 · Hall deletion</h4>
+    <ul>
+      <li>Hall cannot be deleted while it has active (pending or approved-future) bookings.</li>
+      <li>Surface the blocked state as a modal with a <b>Deactivate</b> alternative.</li>
+    </ul>
+  </div>
+  <div class="rulebox">
+    <h4>R5 · Role-based routing</h4>
+    <ul>
+      <li>Guest → cannot access <code>/user</code>, <code>/booking/*</code>, <code>/admin</code>. Redirect to <code>/login</code>.</li>
+      <li>User → cannot access <code>/admin</code>. Redirect to <code>/login</code>.</li>
+      <li>Admin → can access everything. Show role pill in app bar.</li>
+    </ul>
+  </div>
+</section>
+
+<!-- ================= FIGMA BUILD BLUEPRINT ================= -->
+<section class="chapter" id="figma">
+  <h2>11 · Figma Build Blueprint</h2>
+  <p class="lede">Step-by-step so another designer can reproduce this file.</p>
+
+  <div class="rulebox">
+    <h4>A · Pages</h4>
+    <ul>
+      <li>00 · Cover &amp; guidelines</li>
+      <li>01 · Tokens &amp; styles</li>
+      <li>02 · Components (primitives + compound)</li>
+      <li>03 · Low-fi wireframes</li>
+      <li>04 · Mid-fi wireframes</li>
+      <li>05 · States (loading/empty/error/success)</li>
+      <li>06 · Responsive (tablet + desktop)</li>
+      <li>07 · Flows &amp; prototype</li>
+      <li>08 · Annotations (business rules)</li>
+    </ul>
+  </div>
+  <div class="rulebox">
+    <h4>B · Frame presets</h4>
+    <ul>
+      <li>Mobile compact: 360 × 800</li>
+      <li>Tablet medium: 768 × 1024</li>
+      <li>Desktop expanded: 1280 × 800</li>
+      <li>Layout grids — compact: 4 col · 16 gutter · 16 margin; medium: 8 col · 20 gutter · 24 margin; expanded: 12 col · 24 gutter · 32 margin.</li>
+    </ul>
+  </div>
+  <div class="rulebox">
+    <h4>C · Text styles (all family: Inter)</h4>
+    <ul>
+      <li>Display/28 · 32 · 600</li>
+      <li>Title/20 · 26 · 600</li>
+      <li>Subtitle/16 · 22 · 600</li>
+      <li>Body/14 · 20 · 400</li>
+      <li>Label/12 · 16 · 600 · +0.4 tracking · UPPERCASE</li>
+      <li>Meta/11 · 14 · 500</li>
+    </ul>
+  </div>
+  <div class="rulebox">
+    <h4>D · Component primitives</h4>
+    <ul>
+      <li>Button (Primary, Outline, Ghost, Danger) · variants: size (sm/md/lg), state (default/hover/pressed/disabled/loading)</li>
+      <li>TextField · variants: state (default/focus/error/disabled), size (sm/md), with/without leading/trailing icon</li>
+      <li>StatusChip · intents (success/warning/danger/info/neutral/brand) · sizes (sm/md)</li>
+      <li>Card · shadow-off / shadow-on</li>
+      <li>Avatar · size (sm/md/lg), initials / image</li>
+      <li>MetricTile · intent variants</li>
+      <li>TimelineSlot · state (free/selected/busy)</li>
+    </ul>
+  </div>
+  <div class="rulebox">
+    <h4>E · Compound components</h4>
+    <ul>
+      <li>AppBar · actions slot, subtitle slot</li>
+      <li>BottomNav · 3/4 items</li>
+      <li>NavRail · collapsed / expanded</li>
+      <li>HallCard · default, selected, inactive</li>
+      <li>BookingCard · by status</li>
+      <li>ConfirmDialog · neutral / destructive / blocked</li>
+      <li>EmptyState, ErrorState, LoadingState</li>
+    </ul>
+  </div>
+  <div class="rulebox">
+    <h4>F · Prototype flows</h4>
+    <ul>
+      <li>Guest discovery → Sign-in gate → Auth → User Home</li>
+      <li>User Home → Create Booking (3 steps) → Success → My Bookings</li>
+      <li>My Bookings → Detail → Cancel confirmation → Toast</li>
+      <li>Admin Home → Bookings → Review modal → Approved/Rejected toast</li>
+      <li>Admin Halls → Add/Edit modal; Delete → Blocked state when active bookings exist</li>
+    </ul>
+  </div>
+</section>
+
+<!-- ================= CRITIQUE ================= -->
+<section class="chapter" id="critique">
+  <h2>12 · Wireframe UX Critique</h2>
+  <table class="tokens-table">
+    <thead><tr><th>Dimension</th><th>Score / 10</th><th>Notes</th></tr></thead>
+    <tbody>
+      <tr><td>Hierarchy</td><td>9</td><td>Hero + metric row carries weight. Cards do not compete.</td></tr>
+      <tr><td>Cognitive load</td><td>8</td><td>Max 3 primary actions per screen. Filters collapse to chips.</td></tr>
+      <tr><td>Discoverability</td><td>8</td><td>FAB on key screens; bottom nav for top-level routes.</td></tr>
+      <tr><td>Admin efficiency</td><td>8</td><td>Inline Approve/Reject avoids modal-per-row. Tabs persist.</td></tr>
+      <tr><td>First-time friction</td><td>8</td><td>Guest path is unblocked; conversion moment is explicit, not silent.</td></tr>
+    </tbody>
+  </table>
+
+  <div class="rulebox">
+    <h4>Top 10 wireframe improvements (backlog)</h4>
+    <ul>
+      <li>1 · Add calendar grid view (Step 2) for visual conflict scanning.</li>
+      <li>2 · Add saved searches for admin queue (“Pending today”).</li>
+      <li>3 · Add batch-approve on tablet/desktop admin view.</li>
+      <li>4 · Add export / print on Admin Bookings for ops handover.</li>
+      <li>5 · Add hall photo gallery on hall detail (guest view).</li>
+      <li>6 · Add notification center (badge on bell) for users.</li>
+      <li>7 · Add help tooltip on status chips (“What does Pending mean?”).</li>
+      <li>8 · Add audit log tab inside admin edit-booking dialog.</li>
+      <li>9 · Add keyboard shortcuts overlay for desktop admin.</li>
+      <li>10 · Add reduced-motion toggle in profile.</li>
+    </ul>
+  </div>
+
+  <div class="rulebox">
+    <h4>Final approval checklist</h4>
+    <ul>
+      <li>☐ All 6 routes covered with default + loading + empty + error.</li>
+      <li>☐ All 5 dialogs covered with primary/secondary actions named explicitly.</li>
+      <li>☐ Business rules R1–R5 visible as sticky notes on relevant frames.</li>
+      <li>☐ Tokens applied (no raw hex in components).</li>
+      <li>☐ Mobile + tablet breakpoints produced.</li>
+      <li>☐ Prototype flows connected end-to-end.</li>
+      <li>☐ Accessibility: touch targets ≥ 44 px, status chips have icon + text, focus states visible.</li>
+      <li>☐ Copy passes UX-copy review (no “Oops!”, no jargon).</li>
+    </ul>
+  </div>
+</section>
+
+<footer style="text-align:center;color:var(--mute);font-size:11px;padding:32px 0">
+  HallMaster Enterprise · Wireframe v1.0 · Generated 19 Apr 2026
+</footer>
+
+</main>
+</body>
+</html>
