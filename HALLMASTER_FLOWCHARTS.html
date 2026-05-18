@@ -1,0 +1,654 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>HallMaster Enterprise — Flowchart Diagrams</title>
+<style>
+  :root{
+    --ink:#111827; --sub:#4b5563; --mute:#6b7280; --line:#d4dded;
+    --bg:#f4f7fc; --card:#ffffff;
+    --brand:#0B4EA2; --brand-soft:#E7EEF8; --brand-ink:#0C2753;
+    --ok:#196B3D; --ok-bg:#E6F6EE;
+    --warn:#9A5A00; --warn-bg:#FFF4E5;
+    --err:#B42318; --err-bg:#FEE4E2;
+    --info:#254F91; --info-bg:#E8EEF9;
+    --decision:#7A4600; --decision-bg:#FFF4E5;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;padding:0;font-family:-apple-system,"Segoe UI",Inter,Roboto,sans-serif;background:var(--bg);color:var(--ink)}
+  header{background:#0B2753;color:#fff;padding:18px 28px;position:sticky;top:0;z-index:10;border-bottom:2px solid #082047;display:flex;gap:24px;flex-wrap:wrap;align-items:center}
+  header h1{font-size:17px;margin:0;letter-spacing:.2px}
+  header nav{display:flex;flex-wrap:wrap;gap:4px}
+  header nav a{color:#c9d7ef;text-decoration:none;font-size:12px;padding:6px 10px;border-radius:6px}
+  header nav a:hover{background:#0d3576;color:#fff}
+
+  main{max-width:1400px;margin:0 auto;padding:32px 24px 80px}
+  section{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:28px 28px 32px;margin-bottom:28px;box-shadow:0 1px 0 rgba(15,23,42,.03)}
+  h2{margin:0 0 4px;font-size:20px;border-left:4px solid var(--brand);padding-left:10px;color:var(--ink)}
+  .lede{color:var(--sub);margin:4px 0 24px;font-size:13px;max-width:760px}
+
+  /* Legend */
+  .legend{display:flex;gap:20px;flex-wrap:wrap;background:#f8faff;border:1px solid var(--line);border-radius:12px;padding:14px 18px;margin-bottom:24px;font-size:12px;color:var(--sub)}
+  .legend .sw{display:inline-flex;align-items:center;gap:8px}
+  .legend .box{width:36px;height:20px;border-radius:4px;border:1.5px solid}
+
+  /* Flowchart canvas */
+  .flow{display:flex;flex-direction:column;align-items:center;gap:0;padding:8px 0}
+  .row{display:flex;gap:16px;align-items:flex-start;justify-content:center;flex-wrap:wrap}
+
+  /* Nodes */
+  .node{
+    position:relative;
+    min-width:170px;max-width:260px;
+    padding:12px 16px;
+    border-radius:10px;
+    background:#fff;
+    border:1.5px solid var(--brand);
+    color:var(--brand-ink);
+    font-size:13px;font-weight:600;
+    text-align:center;
+    line-height:1.35;
+    box-shadow:0 1px 2px rgba(15,23,42,.04);
+  }
+  .node .sub{display:block;font-weight:400;font-size:11px;color:var(--sub);margin-top:3px}
+  .node.start, .node.end{
+    border-radius:99px;padding:12px 22px;
+    background:var(--brand);color:#fff;border-color:var(--brand-ink);
+    font-weight:700;text-transform:uppercase;letter-spacing:.4px;font-size:12px;
+  }
+  .node.end{background:var(--ok);border-color:#0d4a2a}
+  .node.end.err{background:var(--err);border-color:#7a140c}
+  .node.process{background:#fff;border-color:var(--brand)}
+  .node.data{background:var(--info-bg);border-color:var(--info);color:var(--info)}
+  .node.action{background:var(--brand-soft);border-color:var(--brand);color:var(--brand-ink)}
+  .node.success{background:var(--ok-bg);border-color:var(--ok);color:var(--ok)}
+  .node.error{background:var(--err-bg);border-color:var(--err);color:var(--err)}
+  .node.warn{background:var(--warn-bg);border-color:var(--warn);color:var(--warn)}
+
+  /* Decision diamond */
+  .diamond{
+    width:170px;height:100px;
+    background:var(--decision-bg);
+    border:1.5px solid var(--decision);
+    color:var(--decision);
+    display:flex;align-items:center;justify-content:center;text-align:center;
+    transform:rotate(45deg);
+    border-radius:12px;
+    position:relative;
+    margin:30px 0;
+  }
+  .diamond > span{transform:rotate(-45deg);display:block;font-weight:700;font-size:12px;padding:0 10px;line-height:1.3}
+
+  /* Connectors */
+  .arrow{
+    width:2px;min-height:28px;background:var(--mute);
+    position:relative;margin:0 auto;
+  }
+  .arrow::after{
+    content:"";position:absolute;bottom:-2px;left:50%;transform:translateX(-50%);
+    width:0;height:0;
+    border-left:6px solid transparent;border-right:6px solid transparent;
+    border-top:9px solid var(--mute);
+  }
+  .arrow.ok{background:var(--ok)}
+  .arrow.ok::after{border-top-color:var(--ok)}
+  .arrow.err{background:var(--err)}
+  .arrow.err::after{border-top-color:var(--err)}
+
+  .arrow.labelled{min-height:40px}
+  .arrow .label{
+    position:absolute;left:10px;top:50%;transform:translateY(-50%);
+    background:#fff;border:1px solid var(--line);border-radius:99px;
+    padding:2px 8px;font-size:11px;font-weight:600;color:var(--sub);
+    white-space:nowrap;
+  }
+  .arrow.ok .label{border-color:var(--ok);color:var(--ok)}
+  .arrow.err .label{border-color:var(--err);color:var(--err)}
+
+  /* Horizontal branches */
+  .branch{display:flex;gap:60px;justify-content:center;position:relative}
+  .branch::before{
+    content:"";position:absolute;left:25%;right:25%;top:-14px;height:2px;background:var(--mute);
+  }
+  .branch .col{display:flex;flex-direction:column;align-items:center}
+  .branch .col::before{
+    content:"";width:2px;height:14px;background:var(--mute);
+  }
+
+  /* Group containers */
+  .group{
+    border:2px dashed var(--line);border-radius:14px;padding:18px;margin:8px 0;
+    background:#fafbff;width:100%;max-width:900px;
+  }
+  .group .title{
+    font-size:11px;font-weight:700;letter-spacing:.6px;text-transform:uppercase;
+    color:var(--brand);margin-bottom:12px;text-align:center;
+  }
+
+  /* Swim lanes */
+  .swimlanes{display:grid;grid-template-columns:120px 1fr 1fr 1fr;gap:0;border:1px solid var(--line);border-radius:12px;overflow:hidden;background:#fff}
+  .swimlanes .lane-head{background:var(--brand);color:#fff;padding:10px 12px;font-size:11px;font-weight:700;letter-spacing:.6px;text-transform:uppercase;text-align:center;border-right:1px solid rgba(255,255,255,.2)}
+  .swimlanes .lane-head:last-child{border-right:0}
+  .swimlanes .role{background:#f3f5fa;padding:14px 10px;font-weight:700;font-size:11px;text-transform:uppercase;letter-spacing:.4px;color:var(--sub);border-top:1px solid var(--line);border-right:1px solid var(--line);display:flex;align-items:center;justify-content:center;text-align:center}
+  .swimlanes .cell{padding:16px;border-top:1px solid var(--line);border-right:1px solid var(--line);display:flex;flex-direction:column;gap:8px;align-items:center;min-height:110px;background:#fff}
+  .swimlanes .cell:last-child{border-right:0}
+  .swimlanes .cell.empty{background:#fafbfd}
+
+  /* Site map tree */
+  .tree{display:flex;flex-direction:column;align-items:center;gap:0}
+  .tree .level{display:flex;gap:20px;justify-content:center;flex-wrap:wrap;position:relative;margin:14px 0 0 0}
+
+  @media print {
+    body{background:#fff}
+    header{position:static}
+    section{break-inside:avoid;page-break-inside:avoid;box-shadow:none}
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>HallMaster Enterprise — Flowchart Diagrams</h1>
+  <nav>
+    <a href="#legend">Legend</a>
+    <a href="#sitemap">Sitemap</a>
+    <a href="#auth">Auth</a>
+    <a href="#routing">Routing</a>
+    <a href="#booking">Booking</a>
+    <a href="#conflict">Conflict</a>
+    <a href="#manage">Edit/Cancel</a>
+    <a href="#admin">Admin</a>
+    <a href="#halldelete">Hall Delete</a>
+    <a href="#data">Data Flow</a>
+  </nav>
+</header>
+
+<main>
+
+<!-- LEGEND -->
+<section id="legend">
+  <h2>Legend</h2>
+  <p class="lede">Shape and colour carry meaning across every flowchart in this document.</p>
+  <div class="legend">
+    <span class="sw"><span class="box" style="background:#0B4EA2;border-color:#0C2753;border-radius:99px"></span> Start / End (pill)</span>
+    <span class="sw"><span class="box" style="background:#fff;border-color:#0B4EA2"></span> Process step</span>
+    <span class="sw"><span class="box" style="background:#FFF4E5;border-color:#9A5A00;transform:rotate(45deg);width:18px;height:18px"></span> Decision (diamond)</span>
+    <span class="sw"><span class="box" style="background:#E8EEF9;border-color:#254F91"></span> Data / state</span>
+    <span class="sw"><span class="box" style="background:#E6F6EE;border-color:#196B3D"></span> Success end</span>
+    <span class="sw"><span class="box" style="background:#FEE4E2;border-color:#B42318"></span> Error / Blocked</span>
+  </div>
+</section>
+
+<!-- 1 · SITEMAP -->
+<section id="sitemap">
+  <h2>1 · Application Sitemap</h2>
+  <p class="lede">Top-level routes, grouped by role. Arrows show permitted navigation. Restricted routes are guarded by the router redirect.</p>
+
+  <div class="flow">
+    <div class="node start">App launch → /guest</div>
+    <div class="arrow"></div>
+    <div class="row" style="gap:40px;align-items:stretch">
+      <div class="group" style="max-width:280px">
+        <div class="title">Public</div>
+        <div class="flow">
+          <div class="node">Guest Home <span class="sub">/guest</span></div>
+          <div class="arrow"></div>
+          <div class="node action">Sign in gate <span class="sub">/login</span></div>
+        </div>
+      </div>
+      <div class="group" style="max-width:280px">
+        <div class="title">User (role = user)</div>
+        <div class="flow">
+          <div class="node">User Home <span class="sub">/user</span></div>
+          <div class="arrow"></div>
+          <div class="node">Booking Flow <span class="sub">/booking/new</span></div>
+          <div class="arrow"></div>
+          <div class="node">My Bookings <span class="sub">/booking/my</span></div>
+        </div>
+      </div>
+      <div class="group" style="max-width:280px">
+        <div class="title">Administrator (role = admin)</div>
+        <div class="flow">
+          <div class="node">Admin Dashboard <span class="sub">/admin</span></div>
+          <div class="arrow"></div>
+          <div class="row">
+            <div class="node data" style="min-width:80px">Bookings</div>
+            <div class="node data" style="min-width:80px">Halls</div>
+            <div class="node data" style="min-width:80px">Users</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- 2 · AUTH FLOW -->
+<section id="auth">
+  <h2>2 · Authentication Flow (Login &amp; Register)</h2>
+  <p class="lede">Single entry point with segmented control. Rate limiter and role routing are enforced on the submit path.</p>
+
+  <div class="flow">
+    <div class="node start">User on /login</div>
+    <div class="arrow"></div>
+    <div class="diamond"><span>Login or Register tab?</span></div>
+
+    <div class="row" style="gap:80px;align-items:stretch;margin-top:20px">
+      <!-- LEFT: Register -->
+      <div class="flow" style="flex:1;max-width:380px">
+        <div class="node process">Fill registration form<span class="sub">name, email, password, confirm</span></div>
+        <div class="arrow"></div>
+        <div class="diamond"><span>Valid fields &amp; password ≥ 8?</span></div>
+        <div class="arrow err labelled"><span class="label">No</span></div>
+        <div class="node error">Show field-level errors</div>
+
+        <div class="arrow ok labelled" style="margin-top:-112px"><span class="label">Yes</span></div>
+        <div class="node process" style="margin-top:8px">Hash password (SHA-256 + salt)</div>
+        <div class="arrow"></div>
+        <div class="node data">INSERT into users<br>role = 'user'</div>
+        <div class="arrow ok"></div>
+        <div class="node end">Route → /user</div>
+      </div>
+
+      <!-- RIGHT: Login -->
+      <div class="flow" style="flex:1;max-width:380px">
+        <div class="node process">Enter email &amp; password</div>
+        <div class="arrow"></div>
+        <div class="diamond"><span>Rate limiter tripped?</span></div>
+        <div class="arrow err labelled"><span class="label">Yes</span></div>
+        <div class="node error">Block + show countdown</div>
+
+        <div class="arrow ok labelled" style="margin-top:-112px"><span class="label">No</span></div>
+        <div class="node process" style="margin-top:8px">Compare hash against users table</div>
+        <div class="arrow"></div>
+        <div class="diamond"><span>Credentials correct?</span></div>
+        <div class="arrow err labelled"><span class="label">No</span></div>
+        <div class="node error">Increment counter<br>Show "Incorrect…"</div>
+
+        <div class="arrow ok labelled" style="margin-top:-112px"><span class="label">Yes</span></div>
+        <div class="diamond" style="margin-top:8px"><span>role == admin?</span></div>
+        <div class="row" style="gap:40px;margin-top:20px">
+          <div class="flow">
+            <div class="arrow ok labelled" style="margin-top:-20px"><span class="label">Yes</span></div>
+            <div class="node end">Route → /admin</div>
+          </div>
+          <div class="flow">
+            <div class="arrow ok labelled" style="margin-top:-20px"><span class="label">No</span></div>
+            <div class="node end">Route → /user</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- 3 · ROLE-BASED ROUTING DECISION TREE -->
+<section id="routing">
+  <h2>3 · Role-Based Routing Decision Tree</h2>
+  <p class="lede">Every navigation event runs through the <code>GoRouter.redirect</code> callback. This is how the guard decides.</p>
+
+  <div class="flow">
+    <div class="node start">Navigation intent → path</div>
+    <div class="arrow"></div>
+    <div class="node data">Read currentUserProvider<br>role = user?.role ?? guest</div>
+    <div class="arrow"></div>
+    <div class="diamond"><span>path == /admin?</span></div>
+
+    <div class="row" style="gap:60px;margin-top:20px">
+      <div class="flow">
+        <div class="arrow err labelled" style="margin-top:-20px"><span class="label">Yes</span></div>
+        <div class="diamond"><span>role == admin?</span></div>
+        <div class="row" style="gap:40px;margin-top:18px">
+          <div class="flow">
+            <div class="arrow err labelled" style="margin-top:-20px"><span class="label">No</span></div>
+            <div class="node end err">Redirect → /login</div>
+          </div>
+          <div class="flow">
+            <div class="arrow ok labelled" style="margin-top:-20px"><span class="label">Yes</span></div>
+            <div class="node end">Allow /admin</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="flow">
+        <div class="arrow labelled" style="margin-top:-20px"><span class="label">No</span></div>
+        <div class="diamond"><span>path is /user or /booking/*?</span></div>
+        <div class="row" style="gap:40px;margin-top:18px">
+          <div class="flow">
+            <div class="arrow err labelled" style="margin-top:-20px"><span class="label">Yes + role == guest</span></div>
+            <div class="node end err">Redirect → /login</div>
+          </div>
+          <div class="flow">
+            <div class="arrow ok labelled" style="margin-top:-20px"><span class="label">Otherwise</span></div>
+            <div class="node end">Allow route</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- 4 · BOOKING CREATION FLOW -->
+<section id="booking">
+  <h2>4 · Booking Creation Flow (Three Steps)</h2>
+  <p class="lede">Pick hall → pick time → confirm. Conflict check fires on field blur and again on submit as a final guard against race conditions.</p>
+
+  <div class="flow">
+    <div class="node start">Tap "New booking" from /user</div>
+    <div class="arrow"></div>
+
+    <div class="group">
+      <div class="title">Step 1 of 3 — Pick a hall</div>
+      <div class="flow">
+        <div class="node process">Load hall list<br>hallRepository.list()</div>
+        <div class="arrow"></div>
+        <div class="node process">User selects hall</div>
+        <div class="arrow"></div>
+        <div class="diamond"><span>Hall selected?</span></div>
+        <div class="arrow err labelled"><span class="label">No</span></div>
+        <div class="node error">Disable Continue button</div>
+        <div class="arrow ok labelled" style="margin-top:-112px"><span class="label">Yes</span></div>
+        <div class="node action" style="margin-top:8px">Continue</div>
+      </div>
+    </div>
+
+    <div class="arrow"></div>
+
+    <div class="group">
+      <div class="title">Step 2 of 3 — Pick date &amp; time</div>
+      <div class="flow">
+        <div class="node process">Pick date (blocks past)</div>
+        <div class="arrow"></div>
+        <div class="node process">Load busy slots for hall + date</div>
+        <div class="arrow"></div>
+        <div class="node process">Enter startHour &amp; endHour</div>
+        <div class="arrow"></div>
+        <div class="diamond"><span>startHour &lt; endHour?</span></div>
+        <div class="arrow err labelled"><span class="label">No</span></div>
+        <div class="node error">"Start must be before End"</div>
+
+        <div class="arrow ok labelled" style="margin-top:-112px"><span class="label">Yes</span></div>
+        <div class="diamond" style="margin-top:8px"><span>Overlaps an existing booking?</span></div>
+        <div class="arrow err labelled"><span class="label">Yes</span></div>
+        <div class="node error">Show conflict banner +<br>suggest free windows</div>
+
+        <div class="arrow ok labelled" style="margin-top:-112px"><span class="label">No</span></div>
+        <div class="node action" style="margin-top:8px">Continue</div>
+      </div>
+    </div>
+
+    <div class="arrow"></div>
+
+    <div class="group">
+      <div class="title">Step 3 of 3 — Review &amp; submit</div>
+      <div class="flow">
+        <div class="node process">Review summary<br>(hall, date, time, duration)</div>
+        <div class="arrow"></div>
+        <div class="node process">Add optional purpose</div>
+        <div class="arrow"></div>
+        <div class="node action">Tap Submit request</div>
+        <div class="arrow"></div>
+        <div class="node process">Re-run hasConflict() as final guard</div>
+        <div class="arrow"></div>
+        <div class="diamond"><span>Still conflict-free?</span></div>
+        <div class="arrow err labelled"><span class="label">No</span></div>
+        <div class="node error">Bounce back to Step 2</div>
+        <div class="arrow ok labelled" style="margin-top:-112px"><span class="label">Yes</span></div>
+        <div class="node data" style="margin-top:8px">INSERT booking<br>status = 'pending'</div>
+        <div class="arrow ok"></div>
+        <div class="node end">Success screen with ref #</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- 5 · CONFLICT CHECK ALGORITHM -->
+<section id="conflict">
+  <h2>5 · Conflict Check Algorithm</h2>
+  <p class="lede">Implemented by <code>bookingRepository.hasConflict(hallId, date, startHour, endHour)</code>. Runs on blur and again on submit.</p>
+
+  <div class="flow">
+    <div class="node start">hasConflict(hallId, date, s, e)</div>
+    <div class="arrow"></div>
+    <div class="node data">SELECT bookings<br>WHERE hall_id = ? AND date = ?<br>AND status IN ('pending','confirmed')</div>
+    <div class="arrow"></div>
+    <div class="diamond"><span>Result set empty?</span></div>
+
+    <div class="row" style="gap:60px;margin-top:20px">
+      <div class="flow">
+        <div class="arrow ok labelled" style="margin-top:-20px"><span class="label">Yes</span></div>
+        <div class="node end">return false<br><span class="sub" style="color:#E6F6EE">no conflict</span></div>
+      </div>
+      <div class="flow">
+        <div class="arrow err labelled" style="margin-top:-20px"><span class="label">No</span></div>
+        <div class="node process">For each row b in results</div>
+        <div class="arrow"></div>
+        <div class="diamond"><span>s &lt; b.end AND b.start &lt; e?</span></div>
+        <div class="row" style="gap:40px;margin-top:18px">
+          <div class="flow">
+            <div class="arrow err labelled" style="margin-top:-20px"><span class="label">Yes</span></div>
+            <div class="node end err">return true<br><span class="sub" style="color:#FEE4E2">conflict</span></div>
+          </div>
+          <div class="flow">
+            <div class="arrow ok labelled" style="margin-top:-20px"><span class="label">No</span></div>
+            <div class="node process">continue loop</div>
+            <div class="arrow ok"></div>
+            <div class="node end">return false</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- 6 · EDIT / CANCEL FLOW -->
+<section id="manage">
+  <h2>6 · Booking Edit &amp; Cancel Flow</h2>
+  <p class="lede">Edit permissions depend on status. Cancel requires explicit confirmation; success offers Undo for six seconds.</p>
+
+  <div class="flow">
+    <div class="node start">User opens My Bookings → Detail</div>
+    <div class="arrow"></div>
+    <div class="diamond"><span>status ∈ {pending, confirmed-future}?</span></div>
+
+    <div class="row" style="gap:60px;margin-top:20px">
+      <div class="flow" style="max-width:400px">
+        <div class="arrow err labelled" style="margin-top:-20px"><span class="label">No</span></div>
+        <div class="node error">Edit hidden<br>Cancel disabled</div>
+        <div class="arrow"></div>
+        <div class="node end err">Read-only</div>
+      </div>
+
+      <div class="flow" style="max-width:480px">
+        <div class="arrow ok labelled" style="margin-top:-20px"><span class="label">Yes</span></div>
+        <div class="node process">Actions: Edit / Cancel visible</div>
+        <div class="arrow"></div>
+        <div class="diamond"><span>Edit or Cancel?</span></div>
+
+        <div class="row" style="gap:40px;margin-top:18px;align-items:flex-start">
+          <div class="flow">
+            <div class="arrow labelled" style="margin-top:-20px"><span class="label">Edit</span></div>
+            <div class="node process">Open pre-filled modal</div>
+            <div class="arrow"></div>
+            <div class="node process">Apply changes + re-run hasConflict</div>
+            <div class="arrow"></div>
+            <div class="node data">UPDATE booking<br>status = 'pending'</div>
+            <div class="arrow ok"></div>
+            <div class="node end">Saved toast</div>
+          </div>
+          <div class="flow">
+            <div class="arrow err labelled" style="margin-top:-20px"><span class="label">Cancel</span></div>
+            <div class="node warn">Destructive confirmation dialog</div>
+            <div class="arrow"></div>
+            <div class="diamond"><span>Confirmed?</span></div>
+            <div class="arrow err labelled"><span class="label">No</span></div>
+            <div class="node process">Dismiss dialog</div>
+
+            <div class="arrow ok labelled" style="margin-top:-112px"><span class="label">Yes</span></div>
+            <div class="node data" style="margin-top:8px">UPDATE status = 'cancelled'</div>
+            <div class="arrow ok"></div>
+            <div class="node end">Toast with Undo (6 s)</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- 7 · ADMIN APPROVAL WORKFLOW -->
+<section id="admin">
+  <h2>7 · Admin Approval Workflow (Swim Lanes)</h2>
+  <p class="lede">End-to-end lifecycle of a booking, from user submission through admin decision to final state.</p>
+
+  <div class="swimlanes">
+    <div class="lane-head" style="background:#0B2753">Role</div>
+    <div class="lane-head">Stage 1 · Submit</div>
+    <div class="lane-head">Stage 2 · Review</div>
+    <div class="lane-head">Stage 3 · Outcome</div>
+
+    <!-- USER LANE -->
+    <div class="role">User</div>
+    <div class="cell">
+      <div class="node start" style="min-width:140px">Submit request</div>
+      <div class="arrow" style="min-height:12px"></div>
+      <div class="node data" style="min-width:140px">status = pending</div>
+    </div>
+    <div class="cell empty"></div>
+    <div class="cell">
+      <div class="node end" style="min-width:140px">Notification: Approved</div>
+      <div class="node end err" style="min-width:140px">Notification: Rejected</div>
+    </div>
+
+    <!-- ADMIN LANE -->
+    <div class="role">Admin</div>
+    <div class="cell empty"></div>
+    <div class="cell">
+      <div class="node process" style="min-width:140px">Open Admin → Bookings</div>
+      <div class="arrow" style="min-height:12px"></div>
+      <div class="diamond" style="width:130px;height:80px"><span>Approve or Reject?</span></div>
+    </div>
+    <div class="cell">
+      <div class="node action" style="min-width:140px">Approve → confirmed</div>
+      <div class="node warn" style="min-width:140px">Reject → cancelled</div>
+    </div>
+
+    <!-- SYSTEM LANE -->
+    <div class="role">System</div>
+    <div class="cell">
+      <div class="node process" style="min-width:140px">hasConflict()</div>
+      <div class="arrow" style="min-height:12px"></div>
+      <div class="node data" style="min-width:140px">INSERT bookings row</div>
+    </div>
+    <div class="cell">
+      <div class="node process" style="min-width:140px">Load pending queue</div>
+    </div>
+    <div class="cell">
+      <div class="node data" style="min-width:140px">UPDATE status<br>write audit note</div>
+    </div>
+  </div>
+</section>
+
+<!-- 8 · HALL DELETE GUARD -->
+<section id="halldelete">
+  <h2>8 · Hall Deletion Guard</h2>
+  <p class="lede">A hall with active bookings cannot be deleted. The system surfaces a "Deactivate instead" alternative.</p>
+
+  <div class="flow">
+    <div class="node start">Admin taps Delete on a hall</div>
+    <div class="arrow"></div>
+    <div class="node data">Count active bookings<br>status IN (pending, confirmed) AND date ≥ today</div>
+    <div class="arrow"></div>
+    <div class="diamond"><span>Count &gt; 0?</span></div>
+
+    <div class="row" style="gap:60px;margin-top:20px;align-items:flex-start">
+      <div class="flow" style="max-width:380px">
+        <div class="arrow err labelled" style="margin-top:-20px"><span class="label">Yes</span></div>
+        <div class="node error">Block delete</div>
+        <div class="arrow"></div>
+        <div class="node warn">Modal: "Hall still has N active bookings"</div>
+        <div class="arrow"></div>
+        <div class="diamond"><span>Deactivate instead?</span></div>
+        <div class="row" style="gap:40px;margin-top:18px">
+          <div class="flow">
+            <div class="arrow err labelled" style="margin-top:-20px"><span class="label">No</span></div>
+            <div class="node end err">Cancelled</div>
+          </div>
+          <div class="flow">
+            <div class="arrow ok labelled" style="margin-top:-20px"><span class="label">Yes</span></div>
+            <div class="node data">UPDATE halls<br>is_active = 0</div>
+            <div class="arrow ok"></div>
+            <div class="node end">Hall deactivated</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="flow" style="max-width:320px">
+        <div class="arrow ok labelled" style="margin-top:-20px"><span class="label">No</span></div>
+        <div class="node process">Confirm delete dialog</div>
+        <div class="arrow"></div>
+        <div class="diamond"><span>Confirmed?</span></div>
+        <div class="row" style="gap:40px;margin-top:18px">
+          <div class="flow">
+            <div class="arrow err labelled" style="margin-top:-20px"><span class="label">No</span></div>
+            <div class="node end err">Cancelled</div>
+          </div>
+          <div class="flow">
+            <div class="arrow ok labelled" style="margin-top:-20px"><span class="label">Yes</span></div>
+            <div class="node data">DELETE FROM halls</div>
+            <div class="arrow ok"></div>
+            <div class="node end">Hall removed</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- 9 · DATA FLOW ARCHITECTURE -->
+<section id="data">
+  <h2>9 · Data Flow Architecture</h2>
+  <p class="lede">How a typical read and write request travels through the layers. Feature-first, layered, with Riverpod as the coordinator.</p>
+
+  <div class="flow">
+    <div class="group" style="max-width:1000px">
+      <div class="title">Read path — e.g. load My Bookings</div>
+      <div class="row" style="gap:8px;align-items:center;justify-content:center;flex-wrap:nowrap">
+        <div class="node" style="min-width:120px">UI Widget<br><span class="sub">MyBookingsPage</span></div>
+        <span style="font-size:22px;color:#0B4EA2">→</span>
+        <div class="node action" style="min-width:120px">Riverpod Provider<br><span class="sub">userBookingsProvider</span></div>
+        <span style="font-size:22px;color:#0B4EA2">→</span>
+        <div class="node" style="min-width:120px">Repository<br><span class="sub">bookingRepository</span></div>
+        <span style="font-size:22px;color:#0B4EA2">→</span>
+        <div class="node data" style="min-width:120px">SQLite<br><span class="sub">event_hall_booking.db</span></div>
+      </div>
+      <div style="text-align:center;margin-top:12px;color:var(--sub);font-size:12px">Data streams back through AsyncValue; UI renders default / loading / empty / error states.</div>
+    </div>
+
+    <div class="arrow"></div>
+
+    <div class="group" style="max-width:1000px;background:#fff8ea;border-color:#e6c77a">
+      <div class="title" style="color:#7A4600">Write path — e.g. submit a booking</div>
+      <div class="row" style="gap:8px;align-items:center;justify-content:center;flex-wrap:nowrap">
+        <div class="node" style="min-width:110px">Submit action</div>
+        <span style="font-size:22px;color:#9A5A00">→</span>
+        <div class="node action" style="min-width:110px">Provider.notifier</div>
+        <span style="font-size:22px;color:#9A5A00">→</span>
+        <div class="node process" style="min-width:110px">hasConflict()</div>
+        <span style="font-size:22px;color:#9A5A00">→</span>
+        <div class="node" style="min-width:110px">Repository<br><span class="sub">insertBooking</span></div>
+        <span style="font-size:22px;color:#9A5A00">→</span>
+        <div class="node data" style="min-width:110px">SQLite TX<br><span class="sub">INSERT + commit</span></div>
+        <span style="font-size:22px;color:#9A5A00">→</span>
+        <div class="node success" style="min-width:110px">invalidate<br>userBookingsProvider</div>
+      </div>
+      <div style="text-align:center;margin-top:12px;color:#7A4600;font-size:12px">UI re-renders with new booking appearing as status = pending.</div>
+    </div>
+  </div>
+</section>
+
+<footer style="text-align:center;color:#6b7280;font-size:11px;padding:24px 0">
+  HallMaster Enterprise · Flowchart Set · v1.0 · 20 April 2026
+</footer>
+
+</main>
+</body>
+</html>

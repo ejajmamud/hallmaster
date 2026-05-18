@@ -1,0 +1,19 @@
+Welcome, Standard User
+Signed in as Standard User
+Standard User
+Go to home page
+Log out
+Booking command center
+Plan, edit, and monitor all your hall bookings from one place.
+Create New Booking
+Choose hall, schedule date, and confirm your reservation in one flow.
+Start Booking
+Manage Existing Bookings
+Review statuses, edit schedules, and cancel bookings safely.
+Open My Bookings
+Home
+Tab 1 of 3
+Book
+Tab 2 of 3
+My Bookings
+Tab 3 of 3

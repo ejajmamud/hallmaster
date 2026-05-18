@@ -1,0 +1,24 @@
+Welcome, Standard User
+Signed in as Standard User
+Standard User
+Go to home page
+Log out
+Operations workspace
+Good to see you, Standard User
+Launch new requests fast and keep every booking status visible from one command surface.
+New Booking
+Review Bookings
+0
+Total Bookings
+0
+Pending
+0
+Approved
+Create New Booking
+Pick a hall, set schedule, and submit in one guided workflow.
+Home
+Tab 1 of 3
+Book
+Tab 2 of 3
+My Bookings
+Tab 3 of 3

@@ -1,0 +1,25 @@
+Bookings
+Welcome, Standard User
+Signed in as Standard User
+Standard User
+Go to home page
+Log out
+Your workspace
+Hello, Standard User
+Review statuses, submit new requests, and keep your schedule aligned.
+Create new booking
+View my bookings
+0
+Total
+0
+Pending
+0
+Approved
+No bookings yet
+Create your first request to get started.
+Home
+Tab 1 of 3
+Book
+Tab 2 of 3
+My Bookings
+Tab 3 of 3
