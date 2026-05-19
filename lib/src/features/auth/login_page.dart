@@ -457,18 +457,6 @@ class _LoginValuePanel extends StatelessWidget {
             ),
           ),
           Positioned(
-            top: 0,
-            left: 0,
-            child: Container(
-              width: 84,
-              height: 4,
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(AppTokens.radiusPill),
-              ),
-            ),
-          ),
-          Positioned(
             top: 16,
             right: 16,
             child: Container(

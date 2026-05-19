@@ -13,22 +13,47 @@ final appRouterProvider = Provider<GoRouter>((ref) {
   return GoRouter(
     initialLocation: '/guest',
     routes: [
-      GoRoute(path: '/guest', builder: (_, __) => GuestHomePage()),
+      GoRoute(path: '/guest', builder: (_, __) => const GuestHomePage()),
       GoRoute(path: '/login', builder: (_, __) => const LoginPage()),
       GoRoute(path: '/user', builder: (_, __) => const UserHomePage()),
       GoRoute(path: '/admin', builder: (_, __) => const AdminDashboardPage()),
-      GoRoute(path: '/booking/new', builder: (_, __) => BookingFlowPage()),
-      GoRoute(path: '/booking/my', builder: (_, __) => MyBookingsPage()),
+      GoRoute(
+        path: '/admin/bookings',
+        builder: (_, __) => const AdminDashboardPage(
+          initialTabIndex: 0,
+          currentPath: '/admin/bookings',
+        ),
+      ),
+      GoRoute(
+        path: '/admin/halls',
+        builder: (_, __) => const AdminDashboardPage(
+          initialTabIndex: 1,
+          currentPath: '/admin/halls',
+        ),
+      ),
+      GoRoute(
+        path: '/admin/users',
+        builder: (_, __) => const AdminDashboardPage(
+          initialTabIndex: 2,
+          currentPath: '/admin/users',
+        ),
+      ),
+      GoRoute(
+          path: '/booking/new', builder: (_, __) => const BookingFlowPage()),
+      GoRoute(path: '/booking/my', builder: (_, __) => const MyBookingsPage()),
     ],
     redirect: (context, state) {
       final user = ref.read(currentUserProvider);
-      final path = state.fullPath ?? state.path;
+      final path = state.fullPath ?? state.path ?? '';
       final role = user?.role ?? UserRole.guest;
 
-      if (path == '/admin' && role != UserRole.admin) {
+      if (path.startsWith('/admin') && role != UserRole.admin) {
         return '/login';
       }
-      if ((path == '/user' || path == '/booking/new' || path == '/booking/my') && role == UserRole.guest) {
+      if ((path == '/user' ||
+              path == '/booking/new' ||
+              path == '/booking/my') &&
+          role == UserRole.guest) {
         return '/login';
       }
       return null;

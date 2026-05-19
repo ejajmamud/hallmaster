@@ -49,7 +49,7 @@ class _GuestHomePageState extends ConsumerState<GuestHomePage> {
                 child: Padding(
                   padding: const EdgeInsets.fromLTRB(
                     AppTokens.s4,
-                    0,
+                    AppTokens.s3,
                     AppTokens.s4,
                     AppTokens.s4,
                   ),
@@ -288,159 +288,89 @@ class _GuestHero extends StatelessWidget {
       clipBehavior: Clip.antiAlias,
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(AppTokens.radiusMd),
-        gradient: const LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: [Color(0xFF1565D8), Color(0xFF0B4DB5), Color(0xFF083A80)],
-          stops: [0.0, 0.56, 1.0],
-        ),
+        color: AppTokens.brand,
         boxShadow: const [
           BoxShadow(
             color: Color(0x1F0B3F9A),
-            blurRadius: 28,
-            offset: Offset(0, 16),
+            blurRadius: 20,
+            offset: Offset(0, 10),
           ),
         ],
       ),
-      child: Stack(
-        children: [
-          Positioned(
-            top: -46,
-            right: -34,
-            child: Container(
-              width: 150,
-              height: 150,
-              decoration: const BoxDecoration(
-                shape: BoxShape.circle,
-                gradient: RadialGradient(
-                  colors: [Color(0x33FFFFFF), Color(0x00FFFFFF)],
-                ),
-              ),
-            ),
-          ),
-          Positioned(
-            top: 16,
-            left: 0,
-            child: Container(
-              width: 92,
-              height: 4,
-              decoration: BoxDecoration(
-                color: const Color(0x00FFFFFF), // Hidden - was causing visual artifact
-                borderRadius: BorderRadius.circular(AppTokens.radiusPill),
-              ),
-            ),
-          ),
-          Positioned(
-            bottom: -56,
-            left: -28,
-            child: Container(
-              width: 124,
-              height: 124,
-              decoration: const BoxDecoration(
-                shape: BoxShape.circle,
-                gradient: RadialGradient(
-                  colors: [Color(0x18FFFFFF), Color(0x00FFFFFF)],
-                ),
-              ),
-            ),
-          ),
-          Padding(
-            padding: const EdgeInsets.fromLTRB(16, 16, 16, 14),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(14, 14, 14, 14),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
               children: [
-                Text('HallMaster Enterprise',
-                    style: textTheme.labelLarge?.copyWith(
-                      color: Colors.white70,
-                      fontWeight: AppTokens.wSemibold,
-                      letterSpacing: 0.2,
-                    )),
-                const SizedBox(height: AppTokens.s2),
-                Wrap(
-                  spacing: 8,
-                  runSpacing: 8,
-                  children: [
-                    const _HeroBadge(
-                      icon: Icons.workspace_premium,
-                      label: 'Managed booking',
-                      variant: _HeroBadgeVariant.primary,
-                    ),
-                    _HeroBadge(
-                      icon: Icons.apartment_outlined,
-                      label: hallCount == null
-                          ? 'Loading halls'
-                          : '$hallCount halls',
-                      variant: _HeroBadgeVariant.accent,
-                    ),
-                  ],
-                ),
-                const SizedBox(height: AppTokens.s2),
-                Text(
-                  'Find the right venue faster',
-                  style: textTheme.titleLarge?.copyWith(
-                    fontWeight: AppTokens.wExtraBold,
-                    letterSpacing: -0.2,
-                    color: Colors.white,
-                  ),
-                ),
-                const SizedBox(height: AppTokens.s1),
-                Text(
-                  'Browse halls by location and capacity, then sign in to place a booking request with approval tracking.',
-                  style: textTheme.bodyMedium?.copyWith(
-                    color: Colors.white.withOpacity(0.85),
-                  ),
-                ),
-                const SizedBox(height: AppTokens.s3),
-                Tooltip(
-                  message: 'Search halls by name or location',
-                  child: TextField(
-                    onChanged: onQueryChanged,
-                    decoration: InputDecoration(
-                      filled: true,
-                      fillColor: Colors.white,
-                      hintText: 'Where do you want to host your event?',
-                      prefixIcon: const Icon(Icons.search),
-                      suffixIcon: query.trim().isEmpty
-                          ? null
-                          : IconButton(
-                              onPressed: onClearQuery,
-                              icon: const Icon(Icons.close),
-                              tooltip: 'Clear search text',
-                            ),
-                    ),
-                  ),
-                ),
-                const SizedBox(height: AppTokens.s3),
-                Align(
-                  alignment: Alignment.centerLeft,
-                  child: SizedBox(
-                    width: 168,
-                    child: Tooltip(
-                      message: 'Sign in to continue',
-                      child: FilledButton.icon(
-                        style: FilledButton.styleFrom(
-                          backgroundColor: Colors.white,
-                          foregroundColor: AppTokens.brandInk,
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: AppTokens.s3,
-                            vertical: AppTokens.s3,
-                          ),
-                          shape: RoundedRectangleBorder(
-                            borderRadius:
-                                BorderRadius.circular(AppTokens.radiusPill),
-                          ),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'HallMaster',
+                        style: textTheme.labelLarge?.copyWith(
+                          color: Colors.white70,
+                          fontWeight: AppTokens.wSemibold,
                         ),
-                        onPressed: onSignIn,
-                        icon: const Icon(Icons.lock_outline),
-                        label: const Text('Secure Sign In'),
                       ),
-                    ),
+                      const SizedBox(height: 2),
+                      Text(
+                        'Public halls',
+                        style: textTheme.titleLarge?.copyWith(
+                          fontWeight: AppTokens.wExtraBold,
+                          color: Colors.white,
+                        ),
+                      ),
+                    ],
                   ),
+                ),
+                _HeroBadge(
+                  icon: Icons.apartment_outlined,
+                  label: hallCount == null ? 'Loading' : '$hallCount halls',
+                  variant: _HeroBadgeVariant.accent,
                 ),
               ],
             ),
-          ),
-        ],
+            const SizedBox(height: AppTokens.s3),
+            Tooltip(
+              message: 'Search halls by name or location',
+              child: TextField(
+                onChanged: onQueryChanged,
+                decoration: InputDecoration(
+                  filled: true,
+                  fillColor: Colors.white,
+                  hintText: 'Search hall or location',
+                  prefixIcon: const Icon(Icons.search),
+                  suffixIcon: query.trim().isEmpty
+                      ? null
+                      : IconButton(
+                          onPressed: onClearQuery,
+                          icon: const Icon(Icons.close),
+                          tooltip: 'Clear search text',
+                        ),
+                ),
+              ),
+            ),
+            const SizedBox(height: AppTokens.s2),
+            Align(
+              alignment: Alignment.centerLeft,
+              child: TextButton.icon(
+                style: TextButton.styleFrom(
+                  foregroundColor: Colors.white,
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: AppTokens.s2,
+                    vertical: AppTokens.s2,
+                  ),
+                ),
+                onPressed: onSignIn,
+                icon: const Icon(Icons.lock_outline, size: 18),
+                label: const Text('Sign in to book'),
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -458,20 +388,20 @@ class _InfoPill extends StatelessWidget {
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(AppTokens.radiusPill),
-        color: const Color(0x1AFFFFFF),
-        border: Border.all(color: Colors.white24),
+        color: AppTokens.brandInk,
+        border: Border.all(color: AppTokens.brandInk),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(icon, size: 14, color: Colors.white),
+          Icon(icon, size: 14, color: AppTokens.textInverse),
           const SizedBox(width: 6),
           Text(
             label,
-            style: Theme.of(context)
-                .textTheme
-                .labelMedium
-                ?.copyWith(color: Colors.white),
+            style: Theme.of(context).textTheme.labelMedium?.copyWith(
+                  color: AppTokens.textInverse,
+                  fontWeight: AppTokens.wSemibold,
+                ),
           ),
         ],
       ),

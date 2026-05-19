@@ -37,7 +37,7 @@ class _BookingFlowPageState extends ConsumerState<BookingFlowPage> {
       body: hallsAsync.when(
         data: (halls) {
           if (halls.isEmpty) {
-            return AppEmptyState(
+            return const AppEmptyState(
               title: 'No halls available',
               description:
                   'Admin needs to add halls before bookings can be created.',
@@ -87,8 +87,8 @@ class _BookingFlowPageState extends ConsumerState<BookingFlowPage> {
         padding: AppTokens.pagePadding,
         children: [
           Container(
-            padding: const EdgeInsets.fromLTRB(AppTokens.s4, AppTokens.s4,
-                AppTokens.s4, AppTokens.s3 + 2),
+            padding: const EdgeInsets.fromLTRB(
+                AppTokens.s4, AppTokens.s4, AppTokens.s4, AppTokens.s3 + 2),
             decoration: BoxDecoration(
               color: AppTokens.brandSurface,
               borderRadius: BorderRadius.circular(AppTokens.radiusLg),
@@ -136,7 +136,7 @@ class _BookingFlowPageState extends ConsumerState<BookingFlowPage> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  _BookingSectionTitle(
+                  const _BookingSectionTitle(
                     icon: Icons.apartment_outlined,
                     title: 'Property and schedule',
                     subtitle: 'Choose where and when your event happens',
@@ -164,11 +164,9 @@ class _BookingFlowPageState extends ConsumerState<BookingFlowPage> {
                     message: 'Select event date',
                     child: Material(
                       color: AppTokens.canvasTint,
-                      borderRadius:
-                          BorderRadius.circular(AppTokens.radiusSm),
+                      borderRadius: BorderRadius.circular(AppTokens.radiusSm),
                       child: InkWell(
-                        borderRadius:
-                            BorderRadius.circular(AppTokens.radiusSm),
+                        borderRadius: BorderRadius.circular(AppTokens.radiusSm),
                         onTap: () async {
                           final today = DateTime.now();
                           final startOfToday =
@@ -179,8 +177,8 @@ class _BookingFlowPageState extends ConsumerState<BookingFlowPage> {
                                 ? startOfToday
                                 : selectedDate,
                             firstDate: startOfToday,
-                            lastDate: startOfToday.add(
-                                const Duration(days: 365)),
+                            lastDate:
+                                startOfToday.add(const Duration(days: 365)),
                           );
                           if (date != null) {
                             setState(() => selectedDate = date);
@@ -197,8 +195,7 @@ class _BookingFlowPageState extends ConsumerState<BookingFlowPage> {
                               const SizedBox(width: AppTokens.s3),
                               Expanded(
                                 child: Column(
-                                  crossAxisAlignment:
-                                      CrossAxisAlignment.start,
+                                  crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
                                     Text(
                                       'Event date',
@@ -265,7 +262,7 @@ class _BookingFlowPageState extends ConsumerState<BookingFlowPage> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  _BookingSectionTitle(
+                  const _BookingSectionTitle(
                     icon: Icons.room_service_outlined,
                     title: 'Add-on services',
                     subtitle: 'Select optional services for your event',
@@ -299,7 +296,7 @@ class _BookingFlowPageState extends ConsumerState<BookingFlowPage> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  _BookingSectionTitle(
+                  const _BookingSectionTitle(
                     icon: Icons.receipt_long_outlined,
                     title: 'Price summary',
                     subtitle: 'Transparent pricing before confirmation',
@@ -426,11 +423,12 @@ class _BookingFlowPageState extends ConsumerState<BookingFlowPage> {
         changes: 'New booking created',
       );
 
+      if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
             content: Text('Booking submitted and pending admin approval.')),
       );
-      if (mounted) context.go('/booking/my');
+      context.go('/booking/my');
     } catch (e) {
       setState(() => _validationError = 'Error creating booking: $e');
     } finally {
@@ -496,8 +494,7 @@ class _AvailabilityBanner extends StatelessWidget {
   Widget build(BuildContext context) {
     return availability.when(
       data: (isAvailable) {
-        final intent =
-            isAvailable ? StatusIntent.success : StatusIntent.danger;
+        final intent = isAvailable ? StatusIntent.success : StatusIntent.danger;
         final colors = AppTokens.statusColors(intent);
         return Container(
           padding: const EdgeInsets.symmetric(
@@ -510,9 +507,7 @@ class _AvailabilityBanner extends StatelessWidget {
           child: Row(
             children: [
               Icon(
-                isAvailable
-                    ? Icons.check_circle_outline
-                    : Icons.error_outline,
+                isAvailable ? Icons.check_circle_outline : Icons.error_outline,
                 color: colors.fg,
                 size: 20,
               ),
@@ -541,8 +536,8 @@ class _AvailabilityBanner extends StatelessWidget {
           borderRadius: BorderRadius.circular(AppTokens.radiusSm),
           border: Border.all(color: AppTokens.border),
         ),
-        child: Row(
-          children: const [
+        child: const Row(
+          children: [
             SizedBox(
               width: 16,
               height: 16,

@@ -1,63 +1,74 @@
-import 'package:hallmaster_enterprise/src/core/database.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:hallmaster_enterprise/src/core/firestore_service.dart';
 import 'package:hallmaster_enterprise/src/core/models.dart';
-import 'package:sqflite/sqflite.dart';
 
 class BookingRepository {
-  final DatabaseService _databaseService;
+  BookingRepository(this._firestoreService);
 
-  BookingRepository(this._databaseService);
+  final FirestoreService _firestoreService;
 
   Future<Booking?> getBookingById(String id) async {
-    final db = await _databaseService.database;
-    final result = await db.query('bookings', where: 'id = ?', whereArgs: [id]);
-    if (result.isEmpty) return null;
-
-    final booking = result.first;
-    final hall = await _getHallForBooking(db, booking['hall_id'] as String);
-    final services = await _getServicesForBooking(db, id);
-
-    return _mapRowToBooking(booking, hall, services);
+    try {
+      final doc = await _firestoreService.bookings
+          .doc(id)
+          .get()
+          .timeout(FirestoreService.fallbackTimeout);
+      if (!doc.exists) return null;
+      return _mapDataToBooking(doc.id, doc.data() ?? {});
+    } catch (_) {
+      final data = FirestoreService.fallbackBookings[id];
+      return data == null ? null : _mapDataToBooking(id, data);
+    }
   }
 
   Future<List<Booking>> getBookingsByUser(String userId) async {
-    final db = await _databaseService.database;
-    final result = await db.query(
-      'bookings',
-      where: 'user_id = ? AND status != ?',
-      whereArgs: [userId, BookingStatus.cancelled.name],
-      orderBy: 'booking_date DESC',
-    );
-
-    List<Booking> bookings = [];
-    for (final row in result) {
-      final hall = await _getHallForBooking(db, row['hall_id'] as String);
-      final services = await _getServicesForBooking(db, row['id'] as String);
-      bookings.add(_mapRowToBooking(row, hall, services));
+    try {
+      final result = await _firestoreService.bookings
+          .where('userId', isEqualTo: userId)
+          .get()
+          .timeout(FirestoreService.fallbackTimeout);
+      final bookings = <Booking>[];
+      for (final doc in result.docs) {
+        final booking = await _mapDataToBooking(doc.id, doc.data());
+        if (booking.status != BookingStatus.cancelled) {
+          bookings.add(booking);
+        }
+      }
+      bookings.sort((a, b) => b.date.compareTo(a.date));
+      return bookings;
+    } catch (_) {
+      final bookings = await _fallbackBookings();
+      return bookings
+          .where((booking) =>
+              booking.userId == userId &&
+              booking.status != BookingStatus.cancelled)
+          .toList();
     }
-    return bookings;
   }
 
   Future<List<Booking>> getAllBookings() async {
-    final db = await _databaseService.database;
-    final result = await db.query('bookings', orderBy: 'booking_date DESC');
-
-    List<Booking> bookings = [];
-    for (final row in result) {
-      final hall = await _getHallForBooking(db, row['hall_id'] as String);
-      final services = await _getServicesForBooking(db, row['id'] as String);
-      bookings.add(_mapRowToBooking(row, hall, services));
+    try {
+      final result = await _firestoreService.bookings
+          .get()
+          .timeout(FirestoreService.fallbackTimeout);
+      final bookings = <Booking>[];
+      for (final doc in result.docs) {
+        bookings.add(await _mapDataToBooking(doc.id, doc.data()));
+      }
+      bookings.sort((a, b) => b.date.compareTo(a.date));
+      return bookings;
+    } catch (_) {
+      return _fallbackBookings();
     }
-    return bookings;
   }
 
-  /// Check if a hall is available for the given time slot
-  Future<bool> isHallAvailable(String hallId, DateTime date, int startHour, int endHour) async {
-    return isHallAvailableExcluding(
-      hallId,
-      date,
-      startHour,
-      endHour,
-    );
+  Future<bool> isHallAvailable(
+    String hallId,
+    DateTime date,
+    int startHour,
+    int endHour,
+  ) async {
+    return isHallAvailableExcluding(hallId, date, startHour, endHour);
   }
 
   Future<bool> isHallAvailableExcluding(
@@ -67,60 +78,44 @@ class BookingRepository {
     int endHour, {
     String? excludeBookingId,
   }) async {
-    final db = await _databaseService.database;
-    final dateStr = '${date.year}-${date.month.toString().padLeft(2, '0')}-${date.day.toString().padLeft(2, '0')}';
-
-    var whereClause =
-      'hall_id = ? AND booking_date = ? AND status IN (?, ?) AND NOT (end_hour <= ? OR start_hour >= ?)';
-    final whereArgs = <dynamic>[
-      hallId,
-      dateStr,
-      BookingStatus.pending.name,
-      BookingStatus.confirmed.name,
-      startHour,
-      endHour,
-    ];
-
-    if (excludeBookingId != null) {
-      whereClause += ' AND id != ?';
-      whereArgs.add(excludeBookingId);
-    }
-
-    // Check for conflicts: any booking on same day that overlaps time
-    final result = await db.query(
-      'bookings',
-      where: whereClause,
-      whereArgs: whereArgs,
-    );
-
-    return result.isEmpty;
-  }
-
-  /// Get conflicting bookings for a given time slot
-  Future<List<Booking>> getConflictingBookings(String hallId, DateTime date, int startHour, int endHour) async {
-    final db = await _databaseService.database;
-    final dateStr = '${date.year}-${date.month.toString().padLeft(2, '0')}-${date.day.toString().padLeft(2, '0')}';
-
-    final result = await db.query(
-      'bookings',
-      where: 'hall_id = ? AND booking_date = ? AND status IN (?, ?) AND NOT (end_hour <= ? OR start_hour >= ?)',
-      whereArgs: [
+    try {
+      final conflicts = await _getRawConflictingBookingDocs(
         hallId,
-        dateStr,
-        BookingStatus.pending.name,
-        BookingStatus.confirmed.name,
+        date,
         startHour,
         endHour,
-      ],
-    );
-
-    List<Booking> bookings = [];
-    for (final row in result) {
-      final hall = await _getHallForBooking(db, row['hall_id'] as String);
-      final services = await _getServicesForBooking(db, row['id'] as String);
-      bookings.add(_mapRowToBooking(row, hall, services));
+        excludeBookingId: excludeBookingId,
+      );
+      return conflicts.isEmpty;
+    } catch (_) {
+      final conflicts = await _fallbackConflictingBookings(
+        hallId,
+        date,
+        startHour,
+        endHour,
+        excludeBookingId: excludeBookingId,
+      );
+      return conflicts.isEmpty;
     }
-    return bookings;
+  }
+
+  Future<List<Booking>> getConflictingBookings(
+    String hallId,
+    DateTime date,
+    int startHour,
+    int endHour,
+  ) async {
+    try {
+      final docs =
+          await _getRawConflictingBookingDocs(hallId, date, startHour, endHour);
+      final bookings = <Booking>[];
+      for (final doc in docs) {
+        bookings.add(await _mapDataToBooking(doc.id, doc.data()));
+      }
+      return bookings;
+    } catch (_) {
+      return _fallbackConflictingBookings(hallId, date, startHour, endHour);
+    }
   }
 
   Future<String> createBooking({
@@ -132,34 +127,30 @@ class BookingRepository {
     required List<String> serviceIds,
     required double finalPrice,
   }) async {
-    final db = await _databaseService.database;
     final bookingId = DateTime.now().millisecondsSinceEpoch.toString();
     final now = DateTime.now().toIso8601String();
-    final dateStr = '${date.year}-${date.month.toString().padLeft(2, '0')}-${date.day.toString().padLeft(2, '0')}';
 
-    await db.transaction((txn) async {
-      // Insert booking
-      await txn.insert('bookings', {
-        'id': bookingId,
-        'user_id': userId,
-        'hall_id': hallId,
-        'booking_date': dateStr,
-        'start_hour': startHour,
-        'end_hour': endHour,
-        'status': BookingStatus.pending.name,
-        'final_price': finalPrice,
-        'created_at': now,
-        'updated_at': now,
-      });
+    final data = {
+      'userId': userId,
+      'hallId': hallId,
+      'bookingDate': _formatDate(date),
+      'startHour': startHour,
+      'endHour': endHour,
+      'serviceIds': serviceIds,
+      'status': BookingStatus.pending.name,
+      'finalPrice': finalPrice,
+      'createdAt': now,
+      'updatedAt': now,
+    };
 
-      // Insert services
-      for (final serviceId in serviceIds) {
-        await txn.insert('booking_services', {
-          'booking_id': bookingId,
-          'service_id': serviceId,
-        });
-      }
-    });
+    try {
+      await _firestoreService.bookings
+          .doc(bookingId)
+          .set(data)
+          .timeout(FirestoreService.fallbackTimeout);
+    } catch (_) {
+      FirestoreService.fallbackBookings[bookingId] = data;
+    }
 
     return bookingId;
   }
@@ -173,13 +164,11 @@ class BookingRepository {
     List<String>? serviceIds,
     double? finalPrice,
   }) async {
-    final db = await _databaseService.database;
     final booking = await getBookingById(bookingId);
     if (booking == null || booking.status == BookingStatus.cancelled) {
       throw Exception('Cannot update this booking');
     }
 
-    // Check if it's past the booking date
     if (booking.date.isBefore(DateTime.now())) {
       throw Exception('Cannot update past bookings');
     }
@@ -206,32 +195,26 @@ class BookingRepository {
     }
 
     final updates = <String, dynamic>{
-      if (hallId != null) 'hall_id': hallId,
-      if (date != null)
-        'booking_date': '${date.year}-${date.month.toString().padLeft(2, '0')}-${date.day.toString().padLeft(2, '0')}',
-      if (startHour != null) 'start_hour': startHour,
-      if (endHour != null) 'end_hour': endHour,
-      if (finalPrice != null) 'final_price': finalPrice,
-      'updated_at': DateTime.now().toIso8601String(),
+      if (hallId != null) 'hallId': hallId,
+      if (date != null) 'bookingDate': _formatDate(date),
+      if (startHour != null) 'startHour': startHour,
+      if (endHour != null) 'endHour': endHour,
+      if (serviceIds != null) 'serviceIds': serviceIds,
+      if (finalPrice != null) 'finalPrice': finalPrice,
+      'updatedAt': DateTime.now().toIso8601String(),
     };
 
-    await db.transaction((txn) async {
-      await txn.update('bookings', updates, where: 'id = ?', whereArgs: [bookingId]);
-
-      if (serviceIds != null) {
-        await txn.delete('booking_services', where: 'booking_id = ?', whereArgs: [bookingId]);
-        for (final serviceId in serviceIds) {
-          await txn.insert('booking_services', {
-            'booking_id': bookingId,
-            'service_id': serviceId,
-          });
-        }
-      }
-    });
+    try {
+      await _firestoreService.bookings
+          .doc(bookingId)
+          .update(updates)
+          .timeout(FirestoreService.fallbackTimeout);
+    } catch (_) {
+      FirestoreService.fallbackBookings[bookingId]?.addAll(updates);
+    }
   }
 
   Future<void> cancelBooking(String bookingId, {String? reason}) async {
-    final db = await _databaseService.database;
     final booking = await getBookingById(bookingId);
     if (booking == null) {
       throw Exception('Booking not found');
@@ -241,17 +224,21 @@ class BookingRepository {
       throw Exception('Booking is already cancelled');
     }
 
-    await db.update(
-      'bookings',
-      {
-        'status': BookingStatus.cancelled.name,
-        'cancelled_at': DateTime.now().toIso8601String(),
-        'cancellation_reason': reason ?? 'User cancelled',
-        'updated_at': DateTime.now().toIso8601String(),
-      },
-      where: 'id = ?',
-      whereArgs: [bookingId],
-    );
+    final updates = {
+      'status': BookingStatus.cancelled.name,
+      'cancelledAt': DateTime.now().toIso8601String(),
+      'cancellationReason': reason ?? 'User cancelled',
+      'updatedAt': DateTime.now().toIso8601String(),
+    };
+
+    try {
+      await _firestoreService.bookings
+          .doc(bookingId)
+          .update(updates)
+          .timeout(FirestoreService.fallbackTimeout);
+    } catch (_) {
+      FirestoreService.fallbackBookings[bookingId]?.addAll(updates);
+    }
   }
 
   Future<void> setBookingStatus(
@@ -264,29 +251,35 @@ class BookingRepository {
       return;
     }
 
-    final db = await _databaseService.database;
     final booking = await getBookingById(bookingId);
     if (booking == null) {
       throw Exception('Booking not found');
     }
 
-    await db.update(
-      'bookings',
-      {
-        'status': status.name,
-        'updated_at': DateTime.now().toIso8601String(),
-      },
-      where: 'id = ?',
-      whereArgs: [bookingId],
-    );
+    final updates = {
+      'status': status.name,
+      'updatedAt': DateTime.now().toIso8601String(),
+    };
+
+    try {
+      await _firestoreService.bookings
+          .doc(bookingId)
+          .update(updates)
+          .timeout(FirestoreService.fallbackTimeout);
+    } catch (_) {
+      FirestoreService.fallbackBookings[bookingId]?.addAll(updates);
+    }
   }
 
   Future<void> deleteBooking(String bookingId) async {
-    final db = await _databaseService.database;
-    await db.transaction((txn) async {
-      await txn.delete('booking_services', where: 'booking_id = ?', whereArgs: [bookingId]);
-      await txn.delete('bookings', where: 'id = ?', whereArgs: [bookingId]);
-    });
+    try {
+      await _firestoreService.bookings
+          .doc(bookingId)
+          .delete()
+          .timeout(FirestoreService.fallbackTimeout);
+    } catch (_) {
+      FirestoreService.fallbackBookings.remove(bookingId);
+    }
   }
 
   Future<void> logAudit({
@@ -296,66 +289,175 @@ class BookingRepository {
     required String actorId,
     String? changes,
   }) async {
-    final db = await _databaseService.database;
     final auditId = DateTime.now().millisecondsSinceEpoch.toString();
 
-    await db.insert('audit_logs', {
-      'id': auditId,
-      'entity_type': entityType,
-      'entity_id': entityId,
-      'action': action,
-      'actor_id': actorId,
-      'changes': changes,
-      'created_at': DateTime.now().toIso8601String(),
-    });
+    try {
+      await _firestoreService.auditLogs.doc(auditId).set({
+        'entityType': entityType,
+        'entityId': entityId,
+        'action': action,
+        'actorId': actorId,
+        'changes': changes,
+        'createdAt': DateTime.now().toIso8601String(),
+      }).timeout(FirestoreService.fallbackTimeout);
+    } catch (_) {}
   }
 
-  Future<Hall?> _getHallForBooking(Database db, String hallId) async {
-    final result = await db.query('halls', where: 'id = ?', whereArgs: [hallId]);
-    if (result.isEmpty) return null;
+  Future<List<QueryDocumentSnapshot<Map<String, dynamic>>>>
+      _getRawConflictingBookingDocs(
+    String hallId,
+    DateTime date,
+    int startHour,
+    int endHour, {
+    String? excludeBookingId,
+  }) async {
+    final result = await _firestoreService.bookings
+        .where('hallId', isEqualTo: hallId)
+        .where('bookingDate', isEqualTo: _formatDate(date))
+        .get()
+        .timeout(FirestoreService.fallbackTimeout);
 
-    final row = result.first;
-    final amenitiesStr = row['amenities'] as String? ?? '';
-    return Hall(
-      id: row['id'] as String,
-      name: row['name'] as String,
-      location: row['location'] as String,
-      capacity: row['capacity'] as int,
-      basePrice: row['base_price'] as double,
-      amenities: amenitiesStr.isEmpty ? [] : amenitiesStr.split(','),
-    );
+    return result.docs.where((doc) {
+      final data = doc.data();
+      final status = data['status'] as String? ?? '';
+      final existingStart = (data['startHour'] as num?)?.toInt() ?? 0;
+      final existingEnd = (data['endHour'] as num?)?.toInt() ?? 0;
+      final active = status == BookingStatus.pending.name ||
+          status == BookingStatus.confirmed.name;
+      final overlaps = !(existingEnd <= startHour || existingStart >= endHour);
+      return active &&
+          overlaps &&
+          (excludeBookingId == null || doc.id != excludeBookingId);
+    }).toList();
   }
 
-  Future<List<AddOnService>> _getServicesForBooking(Database db, String bookingId) async {
-    final result = await db.rawQuery(
-      'SELECT s.* FROM add_on_services s JOIN booking_services bs ON s.id = bs.service_id WHERE bs.booking_id = ?',
-      [bookingId],
-    );
-
-    return result
-        .map((row) => AddOnService(
-              id: row['id'] as String,
-              name: row['name'] as String,
-              unitPrice: row['unit_price'] as double,
-            ))
-        .toList();
-  }
-
-  Booking _mapRowToBooking(Map<String, dynamic> row, Hall? hall, List<AddOnService> services) {
-    final dateStr = row['booking_date'] as String;
-    final parts = dateStr.split('-');
-    final date = DateTime(int.parse(parts[0]), int.parse(parts[1]), int.parse(parts[2]));
+  Future<Booking> _mapDataToBooking(
+    String id,
+    Map<String, dynamic> data,
+  ) async {
+    final hall = await _getHallForBooking(data['hallId'] as String? ?? '');
+    final services = await _getServicesForBooking(
+        data['serviceIds'] as List<dynamic>? ?? []);
 
     return Booking(
-      id: row['id'] as String,
-      userId: row['user_id'] as String,
-      hall: hall ?? Hall(id: '', name: '', location: '', capacity: 0, basePrice: 0, amenities: []),
-      date: date,
-      startHour: row['start_hour'] as int,
-      endHour: row['end_hour'] as int,
+      id: id,
+      userId: data['userId'] as String? ?? '',
+      hall: hall,
+      date: _parseDate(data['bookingDate'] as String? ?? ''),
+      startHour: (data['startHour'] as num?)?.toInt() ?? 0,
+      endHour: (data['endHour'] as num?)?.toInt() ?? 0,
       services: services,
-      status: BookingStatus.values.firstWhere((e) => e.name == row['status'] as String),
-      finalPrice: row['final_price'] as double,
+      status: BookingStatus.values.firstWhere(
+        (e) => e.name == data['status'],
+        orElse: () => BookingStatus.pending,
+      ),
+      finalPrice: (data['finalPrice'] as num?)?.toDouble() ?? 0,
+    );
+  }
+
+  Future<Hall> _getHallForBooking(String hallId) async {
+    try {
+      final doc = await _firestoreService.halls
+          .doc(hallId)
+          .get()
+          .timeout(FirestoreService.fallbackTimeout);
+      final data = doc.data() ?? {};
+      return Hall(
+        id: doc.exists ? doc.id : '',
+        name: data['name'] as String? ?? '',
+        location: data['location'] as String? ?? '',
+        capacity: (data['capacity'] as num?)?.toInt() ?? 0,
+        basePrice: (data['basePrice'] as num?)?.toDouble() ?? 0,
+        amenities: (data['amenities'] as List<dynamic>? ?? [])
+            .map((e) => '$e')
+            .toList(),
+      );
+    } catch (_) {
+      for (final hall in FirestoreService.fallbackHalls) {
+        if (hall.id == hallId) return hall;
+      }
+    }
+
+    return const Hall(
+      id: '',
+      name: '',
+      location: '',
+      capacity: 0,
+      basePrice: 0,
+      amenities: [],
+    );
+  }
+
+  Future<List<AddOnService>> _getServicesForBooking(
+    List<dynamic> serviceIds,
+  ) async {
+    final services = <AddOnService>[];
+    for (final serviceId in serviceIds.map((e) => '$e')) {
+      try {
+        final doc = await _firestoreService.services
+            .doc(serviceId)
+            .get()
+            .timeout(FirestoreService.fallbackTimeout);
+        final data = doc.data();
+        if (data == null) continue;
+        services.add(AddOnService(
+          id: doc.id,
+          name: data['name'] as String? ?? '',
+          unitPrice: (data['unitPrice'] as num?)?.toDouble() ?? 0,
+        ));
+      } catch (_) {
+        for (final service in FirestoreService.fallbackServices) {
+          if (service.id == serviceId) services.add(service);
+        }
+      }
+    }
+    return services;
+  }
+
+  Future<List<Booking>> _fallbackBookings() async {
+    final bookings = <Booking>[];
+    for (final entry in FirestoreService.fallbackBookings.entries) {
+      bookings.add(await _mapDataToBooking(entry.key, entry.value));
+    }
+    bookings.sort((a, b) => b.date.compareTo(a.date));
+    return bookings;
+  }
+
+  Future<List<Booking>> _fallbackConflictingBookings(
+    String hallId,
+    DateTime date,
+    int startHour,
+    int endHour, {
+    String? excludeBookingId,
+  }) async {
+    final bookings = await _fallbackBookings();
+    final dateStr = _formatDate(date);
+    return bookings.where((booking) {
+      final active = booking.status == BookingStatus.pending ||
+          booking.status == BookingStatus.confirmed;
+      final overlaps =
+          !(booking.endHour <= startHour || booking.startHour >= endHour);
+      return active &&
+          overlaps &&
+          booking.hall.id == hallId &&
+          _formatDate(booking.date) == dateStr &&
+          (excludeBookingId == null || booking.id != excludeBookingId);
+    }).toList();
+  }
+
+  String _formatDate(DateTime date) {
+    return '${date.year}-${date.month.toString().padLeft(2, '0')}-${date.day.toString().padLeft(2, '0')}';
+  }
+
+  DateTime _parseDate(String date) {
+    final parts = date.split('-');
+    if (parts.length != 3) {
+      return DateTime.now();
+    }
+    return DateTime(
+      int.tryParse(parts[0]) ?? DateTime.now().year,
+      int.tryParse(parts[1]) ?? DateTime.now().month,
+      int.tryParse(parts[2]) ?? DateTime.now().day,
     );
   }
 }

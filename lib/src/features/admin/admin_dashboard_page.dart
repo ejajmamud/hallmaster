@@ -14,7 +14,14 @@ import 'package:path_provider/path_provider.dart';
 import 'package:uuid/uuid.dart';
 
 class AdminDashboardPage extends ConsumerStatefulWidget {
-  const AdminDashboardPage({super.key});
+  const AdminDashboardPage({
+    super.key,
+    this.initialTabIndex = 0,
+    this.currentPath = '/admin',
+  });
+
+  final int initialTabIndex;
+  final String currentPath;
 
   @override
   ConsumerState<AdminDashboardPage> createState() => _AdminDashboardPageState();
@@ -29,7 +36,11 @@ class _AdminDashboardPageState extends ConsumerState<AdminDashboardPage>
   @override
   void initState() {
     super.initState();
-    _tabController = TabController(length: 3, vsync: this);
+    _tabController = TabController(
+      length: 3,
+      vsync: this,
+      initialIndex: widget.initialTabIndex.clamp(0, 2),
+    );
   }
 
   @override
@@ -49,6 +60,14 @@ class _AdminDashboardPageState extends ConsumerState<AdminDashboardPage>
     _refreshAdminData();
     // Give providers a moment to refetch so pull-to-refresh feels responsive.
     await Future<void>.delayed(const Duration(milliseconds: 220));
+  }
+
+  void _openAdminTab(int index, {BookingStatus? statusFilter}) {
+    setState(() {
+      _bookingSearchController.clear();
+      _bookingStatusFilter = statusFilter;
+    });
+    _tabController.animateTo(index);
   }
 
   List<Booking> _filterBookings(List<Booking> bookings) {
@@ -499,6 +518,7 @@ class _AdminDashboardPageState extends ConsumerState<AdminDashboardPage>
 
   Future<void> _showAdminEditBookingDialog(Booking booking) async {
     final halls = await ref.read(hallsProvider.future);
+    if (!mounted) return;
 
     Hall? selectedHall = booking.hall;
     for (final hall in halls) {
@@ -701,119 +721,123 @@ class _AdminDashboardPageState extends ConsumerState<AdminDashboardPage>
 
     return AppShellScaffold(
       title: 'Admin Dashboard',
-      currentPath: '/admin',
+      currentPath: widget.currentPath,
       body: Padding(
-        padding: AppTokens.pagePadding,
+        padding: const EdgeInsets.fromLTRB(
+          AppTokens.s3,
+          AppTokens.s3,
+          AppTokens.s3,
+          AppTokens.s2,
+        ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            Flexible(
-              fit: FlexFit.loose,
-              child: SingleChildScrollView(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    hallsAsync.when(
-                      data: (halls) => bookingsAsync.when(
-                        data: (bookings) => usersAsync.when(
-                          data: (users) {
-                            final revenue = bookings
-                                .where((b) =>
-                                    b.status == BookingStatus.confirmed ||
-                                    b.status == BookingStatus.completed)
-                                .fold<double>(0, (sum, b) => sum + b.finalPrice);
-                            final pendingCount = bookings
-                                .where((b) => b.status == BookingStatus.pending)
-                                .length;
+            hallsAsync.when(
+              data: (halls) => bookingsAsync.when(
+                data: (bookings) => usersAsync.when(
+                  data: (users) {
+                    final revenue = bookings
+                        .where((b) =>
+                            b.status == BookingStatus.confirmed ||
+                            b.status == BookingStatus.completed)
+                        .fold<double>(0, (sum, b) => sum + b.finalPrice);
+                    final pendingCount = bookings
+                        .where((b) => b.status == BookingStatus.pending)
+                        .length;
+                    final approvedCount = bookings
+                        .where((b) => b.status == BookingStatus.confirmed)
+                        .length;
+                    final activeCount = bookings
+                        .where((b) =>
+                            b.status == BookingStatus.pending ||
+                            b.status == BookingStatus.confirmed)
+                        .length;
 
-                            return Wrap(
-                              spacing: 12,
-                              runSpacing: 12,
-                              children: [
-                                _MetricCard(
-                                    label: 'Halls',
-                                    value: halls.length.toString(),
-                                    icon: Icons.apartment),
-                                _MetricCard(
-                                    label: 'Users',
-                                    value: users.length.toString(),
-                                    icon: Icons.people),
-                                _MetricCard(
-                                    label: 'Bookings',
-                                    value: bookings.length.toString(),
-                                    icon: Icons.event_note),
-                                _MetricCard(
-                                  label: 'Pending Approval',
-                                  value: pendingCount.toString(),
-                                  icon: Icons.schedule,
-                                ),
-                                _MetricCard(
-                                  label: 'Confirmed Revenue',
-                                  value: 'RM ${revenue.toStringAsFixed(2)}',
-                                  icon: Icons.payments_outlined,
-                                  width: 220,
-                                ),
-                              ],
-                            );
-                          },
-                          loading: () =>
-                              const AppLoadingState(label: 'Loading users...'),
-                          error: (err, stack) => AppErrorState(
-                            message: 'Failed to load users: $err',
-                            onRetry: _refreshAdminData,
+                    return _MetricsPanel(
+                      onRefresh: _refreshAdminData,
+                      metrics: [
+                        _MetricData(
+                          label: 'Total bookings',
+                          value: bookings.length.toString(),
+                          icon: Icons.event_note_outlined,
+                          intent: StatusIntent.info,
+                          onTap: () => _openAdminTab(0),
+                        ),
+                        _MetricData(
+                          label: 'Pending approval',
+                          value: pendingCount.toString(),
+                          icon: Icons.hourglass_top_rounded,
+                          intent: StatusIntent.warning,
+                          onTap: () => _openAdminTab(
+                            0,
+                            statusFilter: BookingStatus.pending,
                           ),
                         ),
-                        loading: () =>
-                            const AppLoadingState(label: 'Loading bookings...'),
-                        error: (err, stack) => AppErrorState(
-                          message: 'Failed to load bookings: $err',
-                          onRetry: _refreshAdminData,
+                        _MetricData(
+                          label: 'Approved',
+                          value: approvedCount.toString(),
+                          icon: Icons.verified_outlined,
+                          intent: StatusIntent.success,
+                          onTap: () => _openAdminTab(
+                            0,
+                            statusFilter: BookingStatus.confirmed,
+                          ),
                         ),
-                      ),
-                      loading: () =>
-                          const AppLoadingState(label: 'Loading halls...'),
-                      error: (err, stack) => AppErrorState(
-                        message: 'Failed to load halls: $err',
-                        onRetry: _refreshAdminData,
-                      ),
-                    ),
-                    const SizedBox(height: 20),
-                    Container(
-                      padding: const EdgeInsets.symmetric(
-                          horizontal: AppTokens.s4, vertical: AppTokens.s3),
-                      decoration: BoxDecoration(
-                        color: AppTokens.brandSurface,
-                        borderRadius:
-                            BorderRadius.circular(AppTokens.radiusMd),
-                        border: Border.all(color: AppTokens.border),
-                      ),
-                      child: Row(
-                        children: [
-                          const Icon(Icons.tune,
-                              color: AppTokens.brand, size: 18),
-                          const SizedBox(width: AppTokens.s2),
-                          Expanded(
-                            child: Text(
-                              'Control center',
-                              style: Theme.of(context).textTheme.titleSmall,
-                            ),
+                        _MetricData(
+                          label: 'Active workflow',
+                          value: activeCount.toString(),
+                          icon: Icons.bolt_outlined,
+                          intent: StatusIntent.info,
+                          onTap: () => _openAdminTab(0),
+                        ),
+                        _MetricData(
+                          label: 'Managed halls',
+                          value: halls.length.toString(),
+                          icon: Icons.apartment_outlined,
+                          intent: StatusIntent.info,
+                          onTap: () => _openAdminTab(1),
+                        ),
+                        _MetricData(
+                          label: 'Registered users',
+                          value: users.length.toString(),
+                          icon: Icons.people_outline,
+                          intent: StatusIntent.success,
+                          onTap: () => _openAdminTab(2),
+                        ),
+                        _MetricData(
+                          label: 'Revenue',
+                          value: 'RM ${revenue.toStringAsFixed(0)}',
+                          icon: Icons.payments_outlined,
+                          intent: StatusIntent.success,
+                          onTap: () => _openAdminTab(
+                            0,
+                            statusFilter: BookingStatus.confirmed,
                           ),
-                          Tooltip(
-                            message: 'Refresh dashboard data',
-                            child: OutlinedButton.icon(
-                              onPressed: _refreshAdminData,
-                              icon: const Icon(Icons.refresh, size: 18),
-                              label: const Text('Refresh'),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ],
+                        ),
+                      ],
+                    );
+                  },
+                  loading: () =>
+                      const AppLoadingState(label: 'Loading users...'),
+                  error: (err, stack) => AppErrorState(
+                    message: 'Failed to load users: $err',
+                    onRetry: _refreshAdminData,
+                  ),
+                ),
+                loading: () =>
+                    const AppLoadingState(label: 'Loading bookings...'),
+                error: (err, stack) => AppErrorState(
+                  message: 'Failed to load bookings: $err',
+                  onRetry: _refreshAdminData,
                 ),
               ),
+              loading: () => const AppLoadingState(label: 'Loading halls...'),
+              error: (err, stack) => AppErrorState(
+                message: 'Failed to load halls: $err',
+                onRetry: _refreshAdminData,
+              ),
             ),
-            const SizedBox(height: 8),
+            const SizedBox(height: AppTokens.s2),
             TabBar(
               controller: _tabController,
               tabs: const [
@@ -953,92 +977,78 @@ class _AdminDashboardPageState extends ConsumerState<AdminDashboardPage>
                                         subtitle: Text(
                                           '${DateFormat('dd MMM yyyy').format(booking.date)} | '
                                           '${booking.startHour}:00-${booking.endHour}:00\n'
-                                          'User: ${booking.userId}',
+                                          'User: ${booking.userId}  |  RM ${booking.finalPrice.toStringAsFixed(2)}',
                                         ),
                                         isThreeLine: true,
-                                        trailing: Column(
-                                          mainAxisAlignment:
-                                              MainAxisAlignment.center,
-                                          crossAxisAlignment:
-                                              CrossAxisAlignment.end,
-                                          children: [
-                                            Text(
-                                                'RM ${booking.finalPrice.toStringAsFixed(2)}'),
-                                            const SizedBox(height: 6),
-                                            PopupMenuButton<String>(
-                                              tooltip: 'Booking actions',
-                                              icon: const Icon(
-                                                  Icons.more_horiz_rounded),
-                                              onSelected: (value) {
-                                                if (value == 'edit') {
-                                                  _showAdminEditBookingDialog(
-                                                      booking);
-                                                  return;
-                                                }
-                                                if (value == 'delete') {
-                                                  _deleteBooking(booking);
-                                                  return;
-                                                }
-                                                final status = BookingStatus
-                                                    .values
-                                                    .firstWhere(
-                                                        (s) => s.name == value);
-                                                _updateBookingStatus(
-                                                    booking, status);
-                                              },
-                                              itemBuilder: (context) => [
-                                                const PopupMenuItem<String>(
-                                                  value: 'edit',
-                                                  child: _MenuRow(
-                                                    icon: Icons.edit_outlined,
-                                                    label:
-                                                        'Reschedule / Edit',
-                                                  ),
-                                                ),
-                                                const PopupMenuDivider(),
-                                                const PopupMenuItem<String>(
-                                                  value: 'pending',
-                                                  child: _MenuRow(
-                                                    icon: Icons
-                                                        .hourglass_empty_rounded,
-                                                    label: 'Mark Pending',
-                                                  ),
-                                                ),
-                                                const PopupMenuItem<String>(
-                                                  value: 'confirmed',
-                                                  child: _MenuRow(
-                                                    icon:
-                                                        Icons.check_circle_outline,
-                                                    label: 'Mark Confirmed',
-                                                  ),
-                                                ),
-                                                const PopupMenuItem<String>(
-                                                  value: 'completed',
-                                                  child: _MenuRow(
-                                                    icon: Icons.flag_outlined,
-                                                    label: 'Mark Completed',
-                                                  ),
-                                                ),
-                                                const PopupMenuDivider(),
-                                                PopupMenuItem<String>(
-                                                  value: 'cancelled',
-                                                  child: _MenuRow(
-                                                    icon:
-                                                        Icons.cancel_outlined,
-                                                    label: 'Cancel Booking',
-                                                    color: AppTokens.warning,
-                                                  ),
-                                                ),
-                                                PopupMenuItem<String>(
-                                                  value: 'delete',
-                                                  child: _MenuRow(
-                                                    icon: Icons
-                                                        .delete_forever_outlined,
-                                                    label: 'Delete Record',
-                                                    color: AppTokens.danger,
-                                                  ),
-                                                ),
-                                              ],
+                                        trailing: PopupMenuButton<String>(
+                                          tooltip: 'Booking actions',
+                                          icon: const Icon(
+                                              Icons.more_horiz_rounded),
+                                          onSelected: (value) {
+                                            if (value == 'edit') {
+                                              _showAdminEditBookingDialog(
+                                                  booking);
+                                              return;
+                                            }
+                                            if (value == 'delete') {
+                                              _deleteBooking(booking);
+                                              return;
+                                            }
+                                            final status = BookingStatus.values
+                                                .firstWhere(
+                                                    (s) => s.name == value);
+                                            _updateBookingStatus(
+                                                booking, status);
+                                          },
+                                          itemBuilder: (context) => [
+                                            const PopupMenuItem<String>(
+                                              value: 'edit',
+                                              child: _MenuRow(
+                                                icon: Icons.edit_outlined,
+                                                label: 'Reschedule / Edit',
+                                              ),
+                                            ),
+                                            const PopupMenuDivider(),
+                                            const PopupMenuItem<String>(
+                                              value: 'pending',
+                                              child: _MenuRow(
+                                                icon: Icons
+                                                    .hourglass_empty_rounded,
+                                                label: 'Mark Pending',
+                                              ),
+                                            ),
+                                            const PopupMenuItem<String>(
+                                              value: 'confirmed',
+                                              child: _MenuRow(
+                                                icon:
+                                                    Icons.check_circle_outline,
+                                                label: 'Mark Confirmed',
+                                              ),
+                                            ),
+                                            const PopupMenuItem<String>(
+                                              value: 'completed',
+                                              child: _MenuRow(
+                                                icon: Icons.flag_outlined,
+                                                label: 'Mark Completed',
+                                              ),
+                                            ),
+                                            const PopupMenuDivider(),
+                                            const PopupMenuItem<String>(
+                                              value: 'cancelled',
+                                              child: _MenuRow(
+                                                icon: Icons.cancel_outlined,
+                                                label: 'Cancel Booking',
+                                                color: AppTokens.warning,
+                                              ),
+                                            ),
+                                            const PopupMenuItem<String>(
+                                              value: 'delete',
+                                              child: _MenuRow(
+                                                icon: Icons
+                                                    .delete_forever_outlined,
+                                                label: 'Delete Record',
+                                                color: AppTokens.danger,
+                                              ),
                                             ),
                                           ],
                                         ),
@@ -1186,71 +1196,209 @@ class _AdminDashboardPageState extends ConsumerState<AdminDashboardPage>
   }
 }
 
-class _MetricCard extends StatelessWidget {
-  const _MetricCard({
+class _MetricData {
+  const _MetricData({
     required this.label,
     required this.value,
     required this.icon,
-    this.width = 160,
+    required this.intent,
+    this.onTap,
   });
 
   final String label;
   final String value;
   final IconData icon;
-  final double width;
+  final StatusIntent intent;
+  final VoidCallback? onTap;
+}
+
+class _MetricsPanel extends StatelessWidget {
+  const _MetricsPanel({
+    required this.metrics,
+    required this.onRefresh,
+  });
+
+  final List<_MetricData> metrics;
+  final VoidCallback onRefresh;
 
   @override
   Widget build(BuildContext context) {
     return LayoutBuilder(
       builder: (context, constraints) {
-        // On compact parents, let the card flex to parent width so metric
-        // tiles stack cleanly instead of overflowing horizontally.
-        final maxWidth = constraints.maxWidth.isFinite
-            ? constraints.maxWidth
-            : double.infinity;
-        final effectiveWidth = width > maxWidth ? maxWidth : width;
+        final compact = constraints.maxWidth < AppTokens.bpMedium;
+        return compact
+            ? _buildCompactGrid(context)
+            : _buildExpandedGrid(context);
+      },
+    );
+  }
 
-        return SizedBox(
-          width: effectiveWidth,
-          child: Container(
-            padding: const EdgeInsets.all(AppTokens.s4),
-            decoration: BoxDecoration(
-              color: AppTokens.cardSurface,
-              borderRadius: BorderRadius.circular(AppTokens.radiusMd),
-              border: Border.all(color: AppTokens.border),
-            ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Container(
-                  width: 36,
-                  height: 36,
-                  decoration: BoxDecoration(
-                    color: AppTokens.brandSurface,
-                    borderRadius: BorderRadius.circular(AppTokens.radiusSm),
-                  ),
-                  child: Icon(icon, size: 20, color: AppTokens.brand),
-                ),
-                const SizedBox(height: AppTokens.s3),
-                Text(
-                  value,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: Theme.of(context)
-                      .textTheme
-                      .headlineSmall
-                      ?.copyWith(fontWeight: AppTokens.wExtraBold),
-                ),
-                const SizedBox(height: 2),
-                Text(
-                  label,
-                  style: Theme.of(context).textTheme.labelMedium,
-                ),
-              ],
+  Widget _buildCompactGrid(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        _MetricsHeader(onRefresh: onRefresh),
+        const SizedBox(height: AppTokens.s2),
+        SizedBox(
+          height: 90,
+          child: ListView.separated(
+            scrollDirection: Axis.horizontal,
+            itemCount: metrics.length,
+            separatorBuilder: (_, __) => const SizedBox(width: AppTokens.s2),
+            itemBuilder: (context, index) => SizedBox(
+              width: 138,
+              child: _MetricTile(metric: metrics[index]),
             ),
           ),
-        );
-      },
+        ),
+      ],
+    );
+  }
+
+  Widget _buildExpandedGrid(BuildContext context) {
+    return Column(
+      children: [
+        _MetricsHeader(onRefresh: onRefresh),
+        const SizedBox(height: AppTokens.s2),
+        LayoutBuilder(
+          builder: (context, constraints) {
+            final columns = constraints.maxWidth >= 1100 ? 4 : 3;
+            final totalGap = AppTokens.s2 * (columns - 1);
+            final columnWidth = (constraints.maxWidth - totalGap) / columns;
+
+            return Wrap(
+              spacing: AppTokens.s2,
+              runSpacing: AppTokens.s2,
+              children: [
+                for (final metric in metrics)
+                  SizedBox(
+                    width: columnWidth,
+                    child: _MetricTile(metric: metric),
+                  ),
+              ],
+            );
+          },
+        ),
+      ],
+    );
+  }
+}
+
+class _MetricsHeader extends StatelessWidget {
+  const _MetricsHeader({required this.onRefresh});
+
+  final VoidCallback onRefresh;
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      children: [
+        const Icon(Icons.admin_panel_settings_outlined,
+            color: AppTokens.brand, size: 20),
+        const SizedBox(width: AppTokens.s2),
+        Expanded(
+          child: Text(
+            'Admin control center',
+            style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                  fontWeight: AppTokens.wBold,
+                ),
+          ),
+        ),
+        Tooltip(
+          message: 'Refresh dashboard data',
+          child: IconButton(
+            onPressed: onRefresh,
+            icon: const Icon(Icons.refresh),
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class _MetricTile extends StatelessWidget {
+  const _MetricTile({required this.metric});
+
+  final _MetricData metric;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final pair = AppTokens.statusColors(metric.intent);
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        borderRadius: BorderRadius.circular(AppTokens.radiusMd),
+        onTap: metric.onTap,
+        child: Ink(
+          height: 86,
+          padding: const EdgeInsets.all(AppTokens.s3),
+          decoration: BoxDecoration(
+            color: AppTokens.cardSurface,
+            borderRadius: BorderRadius.circular(AppTokens.radiusMd),
+            border: Border.all(color: AppTokens.border),
+            boxShadow: const [
+              BoxShadow(
+                color: Color(0x0F0B3F9A),
+                blurRadius: 16,
+                offset: Offset(0, 8),
+              ),
+            ],
+          ),
+          child: Stack(
+            children: [
+              Align(
+                alignment: Alignment.topRight,
+                child: Container(
+                  width: 30,
+                  height: 30,
+                  decoration: BoxDecoration(
+                    color: pair.bg,
+                    borderRadius: BorderRadius.circular(AppTokens.radiusPill),
+                  ),
+                  child: Icon(metric.icon, size: 17, color: pair.fg),
+                ),
+              ),
+              Padding(
+                padding: const EdgeInsets.only(right: 32),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      metric.value,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: theme.textTheme.titleLarge?.copyWith(
+                        height: 1.0,
+                        fontWeight: AppTokens.wExtraBold,
+                      ),
+                    ),
+                    const Spacer(),
+                    Text(
+                      metric.label,
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                      style: theme.textTheme.bodySmall?.copyWith(
+                        color: AppTokens.textSecondary,
+                        fontWeight: AppTokens.wSemibold,
+                        height: 1.15,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const Align(
+                alignment: Alignment.bottomRight,
+                child: Icon(
+                  Icons.chevron_right_rounded,
+                  size: 18,
+                  color: AppTokens.textTertiary,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
     );
   }
 }

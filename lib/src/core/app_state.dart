@@ -1,40 +1,41 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:hallmaster_enterprise/src/core/database.dart';
+import 'package:hallmaster_enterprise/src/core/firestore_service.dart';
 import 'package:hallmaster_enterprise/src/core/models.dart';
 import 'package:hallmaster_enterprise/src/data/repositories/booking_repository.dart';
 import 'package:hallmaster_enterprise/src/data/repositories/hall_repository.dart';
 import 'package:hallmaster_enterprise/src/data/repositories/service_repository.dart';
 import 'package:hallmaster_enterprise/src/data/repositories/user_repository.dart';
 
-// Database Service Provider
-final databaseServiceProvider = Provider<DatabaseService>((ref) {
-  return DatabaseService();
+// Firestore Service Provider
+final firestoreServiceProvider = Provider<FirestoreService>((ref) {
+  return FirestoreService();
 });
 
 // Repository Providers
 final userRepositoryProvider = Provider<UserRepository>((ref) {
-  final dbService = ref.watch(databaseServiceProvider);
-  return UserRepository(dbService);
+  final firestoreService = ref.watch(firestoreServiceProvider);
+  return UserRepository(firestoreService);
 });
 
 final hallRepositoryProvider = Provider<HallRepository>((ref) {
-  final dbService = ref.watch(databaseServiceProvider);
-  return HallRepository(dbService);
+  final firestoreService = ref.watch(firestoreServiceProvider);
+  return HallRepository(firestoreService);
 });
 
 final bookingRepositoryProvider = Provider<BookingRepository>((ref) {
-  final dbService = ref.watch(databaseServiceProvider);
-  return BookingRepository(dbService);
+  final firestoreService = ref.watch(firestoreServiceProvider);
+  return BookingRepository(firestoreService);
 });
 
 final serviceRepositoryProvider = Provider<ServiceRepository>((ref) {
-  final dbService = ref.watch(databaseServiceProvider);
-  return ServiceRepository(dbService);
+  final firestoreService = ref.watch(firestoreServiceProvider);
+  return ServiceRepository(firestoreService);
 });
 
 // Current User Provider
 final currentUserProvider = StateProvider<AppUser?>(
-  (ref) => const AppUser(id: 'guest', name: 'Guest', email: '-', role: UserRole.guest),
+  (ref) => const AppUser(
+      id: 'guest', name: 'Guest', email: '-', role: UserRole.guest),
 );
 
 // Halls Provider - loads from database
@@ -50,13 +51,15 @@ final servicesProvider = FutureProvider<List<AddOnService>>((ref) async {
 });
 
 // Search halls provider
-final searchHallsProvider = FutureProvider.family<List<Hall>, String>((ref, query) async {
+final searchHallsProvider =
+    FutureProvider.family<List<Hall>, String>((ref, query) async {
   final repository = ref.watch(hallRepositoryProvider);
   return repository.searchHalls(query: query.isEmpty ? null : query);
 });
 
 // User bookings provider
-final userBookingsProvider = FutureProvider.family<List<Booking>, String>((ref, userId) async {
+final userBookingsProvider =
+    FutureProvider.family<List<Booking>, String>((ref, userId) async {
   final repository = ref.watch(bookingRepositoryProvider);
   return repository.getBookingsByUser(userId);
 });
@@ -74,7 +77,9 @@ final allUsersProvider = FutureProvider<List<AppUser>>((ref) async {
 });
 
 // Double booking check provider
-final checkDoubleBookingProvider = FutureProvider.family<bool, (String, DateTime, int, int)>((ref, params) async {
+final checkDoubleBookingProvider =
+    FutureProvider.family<bool, (String, DateTime, int, int)>(
+        (ref, params) async {
   final repository = ref.watch(bookingRepositoryProvider);
   final (hallId, date, startHour, endHour) = params;
   return repository.isHallAvailable(hallId, date, startHour, endHour);

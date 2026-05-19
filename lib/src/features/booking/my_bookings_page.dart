@@ -146,6 +146,7 @@ class _MyBookingsPageState extends ConsumerState<MyBookingsPage> {
 
   Future<void> _showEditBookingDialog(Booking booking) async {
     final halls = await ref.read(hallsProvider.future);
+    if (!mounted) return;
     Hall? selectedHall = booking.hall;
     for (final hall in halls) {
       if (hall.id == booking.hall.id) {
@@ -566,8 +567,7 @@ class _MyBookingsPageState extends ConsumerState<MyBookingsPage> {
                                           vertical: AppTokens.s2,
                                         ),
                                       ),
-                                      onPressed: () =>
-                                          _handleCancel(booking),
+                                      onPressed: () => _handleCancel(booking),
                                       icon: const Icon(Icons.cancel_outlined,
                                           size: 18),
                                       label: const Text('Cancel'),

@@ -150,18 +150,6 @@ class _HeroSection extends StatelessWidget {
               ),
             ),
             Positioned(
-              top: 16,
-              left: 0,
-              child: Container(
-                width: 92,
-                height: 4,
-                decoration: BoxDecoration(
-                  color: const Color(0x00FFFFFF), // Hidden - was causing visual artifact
-                  borderRadius: BorderRadius.circular(AppTokens.radiusPill),
-                ),
-              ),
-            ),
-            Positioned(
               bottom: -56,
               left: -28,
               child: Container(
