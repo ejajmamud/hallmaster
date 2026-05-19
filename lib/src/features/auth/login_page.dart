@@ -582,10 +582,8 @@ class _StatBadge extends StatelessWidget {
               label,
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
-              style: Theme.of(context)
-                  .textTheme
-                  .labelMedium
-                  ?.copyWith(color: Colors.white, fontWeight: AppTokens.wSemibold),
+              style: Theme.of(context).textTheme.labelMedium?.copyWith(
+                  color: Colors.white, fontWeight: AppTokens.wSemibold),
             ),
           ),
         ],
@@ -605,10 +603,17 @@ class _FeatureRow extends StatelessWidget {
     return Row(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Icon(icon, size: 20, color: AppTokens.brand),
+        Icon(icon, size: 20, color: Colors.white),
         const SizedBox(width: 10),
         Expanded(
-            child: Text(text, style: Theme.of(context).textTheme.bodyMedium)),
+          child: Text(
+            text,
+            style: Theme.of(context)
+                .textTheme
+                .bodyMedium
+                ?.copyWith(color: Colors.white),
+          ),
+        ),
       ],
     );
   }
