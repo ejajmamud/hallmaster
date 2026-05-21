@@ -57,17 +57,18 @@ final searchHallsProvider =
   return repository.searchHalls(query: query.isEmpty ? null : query);
 });
 
-// User bookings provider
+// User bookings provider - live updates from Firestore so dashboard metrics
+// update as soon as bookings are created or changed.
 final userBookingsProvider =
-    FutureProvider.family<List<Booking>, String>((ref, userId) async {
+    StreamProvider.family<List<Booking>, String>((ref, userId) {
   final repository = ref.watch(bookingRepositoryProvider);
-  return repository.getBookingsByUser(userId);
+  return repository.watchBookingsByUser(userId);
 });
 
-// All bookings provider (for admin)
-final allBookingsProvider = FutureProvider<List<Booking>>((ref) async {
+// All bookings provider (for admin) - live updates from Firestore.
+final allBookingsProvider = StreamProvider<List<Booking>>((ref) {
   final repository = ref.watch(bookingRepositoryProvider);
-  return repository.getAllBookings();
+  return repository.watchAllBookings();
 });
 
 // All users provider (for admin)

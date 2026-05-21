@@ -424,6 +424,9 @@ class _BookingFlowPageState extends ConsumerState<BookingFlowPage> {
       );
 
       if (!mounted) return;
+      ref.invalidate(userBookingsProvider(user.id));
+      ref.invalidate(allBookingsProvider);
+      ref.invalidate(checkDoubleBookingProvider);
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
             content: Text('Booking submitted and pending admin approval.')),

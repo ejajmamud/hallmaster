@@ -53,3 +53,7 @@ branding_*.png
 fresh_build_appbar.png
 simple_red_appbar.png
 white_line_fix_check*.png
+
+# Firebase local config with API keys
+/android/app/google-services.json
+/lib/firebase_options.dart

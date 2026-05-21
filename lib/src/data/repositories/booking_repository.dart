@@ -46,6 +46,27 @@ class BookingRepository {
     }
   }
 
+  Stream<List<Booking>> watchBookingsByUser(String userId) {
+    try {
+      return _firestoreService.bookings
+          .where('userId', isEqualTo: userId)
+          .snapshots()
+          .asyncMap((snapshot) async {
+        final bookings = <Booking>[];
+        for (final doc in snapshot.docs) {
+          final booking = await _mapDataToBooking(doc.id, doc.data());
+          if (booking.status != BookingStatus.cancelled) {
+            bookings.add(booking);
+          }
+        }
+        bookings.sort((a, b) => b.date.compareTo(a.date));
+        return bookings;
+      });
+    } catch (_) {
+      return Stream.fromFuture(getBookingsByUser(userId));
+    }
+  }
+
   Future<List<Booking>> getAllBookings() async {
     try {
       final result = await _firestoreService.bookings
@@ -59,6 +80,21 @@ class BookingRepository {
       return bookings;
     } catch (_) {
       return _fallbackBookings();
+    }
+  }
+
+  Stream<List<Booking>> watchAllBookings() {
+    try {
+      return _firestoreService.bookings.snapshots().asyncMap((snapshot) async {
+        final bookings = <Booking>[];
+        for (final doc in snapshot.docs) {
+          bookings.add(await _mapDataToBooking(doc.id, doc.data()));
+        }
+        bookings.sort((a, b) => b.date.compareTo(a.date));
+        return bookings;
+      });
+    } catch (_) {
+      return Stream.fromFuture(getAllBookings());
     }
   }
 
