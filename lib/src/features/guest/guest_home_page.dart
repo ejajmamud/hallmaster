@@ -65,6 +65,17 @@ class _GuestHomePageState extends ConsumerState<GuestHomePage> {
               SliverToBoxAdapter(
                 child: Padding(
                   padding: const EdgeInsets.fromLTRB(
+                    AppTokens.s4,
+                    0,
+                    AppTokens.s4,
+                    AppTokens.s2,
+                  ),
+                  child: _HallShowcaseSlider(halls: halls),
+                ),
+              ),
+              SliverToBoxAdapter(
+                child: Padding(
+                  padding: const EdgeInsets.fromLTRB(
                       AppTokens.s4, AppTokens.s3, AppTokens.s4, AppTokens.s2),
                   child: Row(
                     children: [
@@ -263,6 +274,143 @@ class _GuestHomePageState extends ConsumerState<GuestHomePage> {
       ),
     );
   }
+}
+
+class _HallShowcaseSlider extends StatefulWidget {
+  const _HallShowcaseSlider({required this.halls});
+
+  final List<Hall> halls;
+
+  @override
+  State<_HallShowcaseSlider> createState() => _HallShowcaseSliderState();
+}
+
+class _HallShowcaseSliderState extends State<_HallShowcaseSlider> {
+  int _activeSlide = 0;
+
+  @override
+  Widget build(BuildContext context) {
+    final slideHalls = widget.halls.take(_hallSlideAssets.length).toList();
+    if (slideHalls.isEmpty) return const SizedBox.shrink();
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        AspectRatio(
+          aspectRatio: 16 / 9,
+          child: ClipRRect(
+            borderRadius: BorderRadius.circular(AppTokens.radiusMd),
+            child: PageView.builder(
+              itemCount: slideHalls.length,
+              onPageChanged: (value) => setState(() => _activeSlide = value),
+              itemBuilder: (context, index) => _HallSlide(
+                hall: slideHalls[index],
+                imageAsset: _hallSlideAssetFor(slideHalls[index], index),
+              ),
+            ),
+          ),
+        ),
+        const SizedBox(height: AppTokens.s2),
+        Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            for (int index = 0; index < slideHalls.length; index++)
+              AnimatedContainer(
+                duration: const Duration(milliseconds: 180),
+                width: index == _activeSlide ? 18 : 7,
+                height: 7,
+                margin: const EdgeInsets.symmetric(horizontal: 3),
+                decoration: BoxDecoration(
+                  color: index == _activeSlide
+                      ? AppTokens.brand
+                      : AppTokens.borderStrong,
+                  borderRadius: BorderRadius.circular(AppTokens.radiusPill),
+                ),
+              ),
+          ],
+        ),
+      ],
+    );
+  }
+}
+
+class _HallSlide extends StatelessWidget {
+  const _HallSlide({required this.hall, required this.imageAsset});
+
+  final Hall hall;
+  final String imageAsset;
+
+  @override
+  Widget build(BuildContext context) {
+    return Stack(
+      fit: StackFit.expand,
+      children: [
+        Image.asset(imageAsset, fit: BoxFit.cover),
+        const DecoratedBox(
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              begin: Alignment.topCenter,
+              end: Alignment.bottomCenter,
+              colors: [Color(0x08000000), Color(0xC4000000)],
+              stops: [0.45, 1],
+            ),
+          ),
+        ),
+        Positioned(
+          left: AppTokens.s3,
+          right: AppTokens.s3,
+          bottom: AppTokens.s3,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                hall.name,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                      color: AppTokens.textInverse,
+                      fontWeight: AppTokens.wExtraBold,
+                    ),
+              ),
+              const SizedBox(height: 2),
+              Text(
+                '${hall.location} | ${hall.capacity} guests',
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: Theme.of(context).textTheme.labelMedium?.copyWith(
+                      color: Colors.white70,
+                    ),
+              ),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+const _hallSlideAssets = [
+  'assets/hall_slides/prime_ballroom.jpg',
+  'assets/hall_slides/orchid_conference_hall.jpg',
+  'assets/hall_slides/zenith_boardroom.jpg',
+];
+
+String _hallSlideAssetFor(Hall hall, int index) {
+  final hallName = hall.name.toLowerCase();
+  if (hall.id == 'h1' || hallName.contains('ballroom')) {
+    return _hallSlideAssets[0];
+  }
+  if (hall.id == 'h2' ||
+      hallName.contains('conference') ||
+      hallName.contains('orchid')) {
+    return _hallSlideAssets[1];
+  }
+  if (hall.id == 'h3' ||
+      hallName.contains('boardroom') ||
+      hallName.contains('zenith')) {
+    return _hallSlideAssets[2];
+  }
+  return _hallSlideAssets[index % _hallSlideAssets.length];
 }
 
 class _GuestHero extends StatelessWidget {

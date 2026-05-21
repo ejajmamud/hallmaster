@@ -47,9 +47,9 @@ ThemeData buildHallMasterTheme() {
     pageTransitionsTheme: const PageTransitionsTheme(
       builders: {
         TargetPlatform.android: FadeUpwardsPageTransitionsBuilder(),
-        TargetPlatform.iOS: CupertinoPageTransitionsBuilder(),
+        TargetPlatform.iOS: FadeUpwardsPageTransitionsBuilder(),
         TargetPlatform.linux: FadeUpwardsPageTransitionsBuilder(),
-        TargetPlatform.macOS: CupertinoPageTransitionsBuilder(),
+        TargetPlatform.macOS: FadeUpwardsPageTransitionsBuilder(),
         TargetPlatform.windows: FadeUpwardsPageTransitionsBuilder(),
         TargetPlatform.fuchsia: FadeUpwardsPageTransitionsBuilder(),
       },
@@ -73,7 +73,7 @@ ThemeData buildHallMasterTheme() {
         fontWeight: AppTokens.wMedium,
       ),
     ),
-    cardTheme: CardTheme(
+    cardTheme: CardThemeData(
       elevation: AppTokens.elev0,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(AppTokens.radiusMd),
@@ -236,7 +236,7 @@ ThemeData buildHallMasterTheme() {
       space: 1,
     ),
     dividerColor: AppTokens.divider,
-    dialogTheme: DialogTheme(
+    dialogTheme: DialogThemeData(
       backgroundColor: AppTokens.cardSurface,
       surfaceTintColor: Colors.transparent,
       elevation: AppTokens.elev3,
@@ -249,7 +249,7 @@ ThemeData buildHallMasterTheme() {
         height: 1.5,
       ),
     ),
-    tabBarTheme: TabBarTheme(
+    tabBarTheme: TabBarThemeData(
       labelColor: AppTokens.brand,
       unselectedLabelColor: AppTokens.textSecondary,
       labelStyle: const TextStyle(fontWeight: AppTokens.wBold, fontSize: 14),

@@ -205,6 +205,10 @@ class BookingRepository {
       throw Exception('Cannot update this booking');
     }
 
+    if (serviceIds != null && booking.status != BookingStatus.pending) {
+      throw Exception('Add-ons can only be changed for pending bookings');
+    }
+
     if (booking.date.isBefore(DateTime.now())) {
       throw Exception('Cannot update past bookings');
     }

@@ -146,6 +146,7 @@ class _MyBookingsPageState extends ConsumerState<MyBookingsPage> {
 
   Future<void> _showEditBookingDialog(Booking booking) async {
     final halls = await ref.read(hallsProvider.future);
+    final services = await ref.read(servicesProvider.future);
     if (!mounted) return;
     Hall? selectedHall = booking.hall;
     for (final hall in halls) {
@@ -157,6 +158,9 @@ class _MyBookingsPageState extends ConsumerState<MyBookingsPage> {
     DateTime selectedDate = booking.date;
     int startHour = booking.startHour;
     int endHour = booking.endHour;
+    final selectedServiceIds =
+        booking.services.map((service) => service.id).toSet();
+    final canChangeAddOns = booking.status == BookingStatus.pending;
     String? dialogError;
 
     final result = await showDialog<bool>(
@@ -167,14 +171,19 @@ class _MyBookingsPageState extends ConsumerState<MyBookingsPage> {
             final selectedHallPrice =
                 selectedHall?.basePrice ?? booking.hall.basePrice;
             final durationFactor = ((endHour - startHour).clamp(1, 24)) / 4;
-            final serviceTotal = booking.services
-                .fold<double>(0, (sum, service) => sum + service.unitPrice);
+            final selectedServices = services
+                .where((service) => selectedServiceIds.contains(service.id))
+                .toList();
+            final serviceTotal = selectedServices.fold<double>(
+                0, (sum, service) => sum + service.unitPrice);
             final subtotal = selectedHallPrice * durationFactor;
             final tax = (subtotal + serviceTotal) * 0.06;
             final total = subtotal + serviceTotal + tax;
 
             return AlertDialog(
-              title: const Text('Reschedule Booking'),
+              title: Text(canChangeAddOns
+                  ? 'Update Pending Booking'
+                  : 'Reschedule Booking'),
               content: SizedBox(
                 width: 460,
                 child: SingleChildScrollView(
@@ -262,8 +271,20 @@ class _MyBookingsPageState extends ConsumerState<MyBookingsPage> {
                         ],
                       ),
                       const SizedBox(height: 12),
-                      Text(
-                          'Services kept: ${booking.services.map((s) => s.name).join(', ')}'),
+                      _BookingAddOnsEditor(
+                        services: services,
+                        selectedServiceIds: selectedServiceIds,
+                        canEdit: canChangeAddOns,
+                        onChanged: (serviceId, checked) {
+                          setDialogState(() {
+                            if (checked) {
+                              selectedServiceIds.add(serviceId);
+                            } else {
+                              selectedServiceIds.remove(serviceId);
+                            }
+                          });
+                        },
+                      ),
                       const SizedBox(height: 8),
                       Text('New total: RM ${total.toStringAsFixed(2)}'),
                     ],
@@ -310,8 +331,11 @@ class _MyBookingsPageState extends ConsumerState<MyBookingsPage> {
     }
 
     final durationFactor = ((endHour - startHour).clamp(1, 24)) / 4;
-    final serviceTotal = booking.services
-        .fold<double>(0, (sum, service) => sum + service.unitPrice);
+    final chosenServices = services
+        .where((service) => selectedServiceIds.contains(service.id))
+        .toList();
+    final serviceTotal = chosenServices.fold<double>(
+        0, (sum, service) => sum + service.unitPrice);
     final subtotal = selectedHall!.basePrice * durationFactor;
     final tax = (subtotal + serviceTotal) * 0.06;
     final total = subtotal + serviceTotal + tax;
@@ -324,16 +348,20 @@ class _MyBookingsPageState extends ConsumerState<MyBookingsPage> {
         date: selectedDate,
         startHour: startHour,
         endHour: endHour,
+        serviceIds: canChangeAddOns ? selectedServiceIds.toList() : null,
         finalPrice: total,
       );
 
       await bookingRepo.logAudit(
         entityType: 'Booking',
         entityId: booking.id,
-        action: 'RESCHEDULED_BY_USER',
+        action: canChangeAddOns
+            ? 'UPDATED_PENDING_BOOKING_BY_USER'
+            : 'RESCHEDULED_BY_USER',
         actorId: ref.read(currentUserProvider)?.id ?? booking.userId,
         changes:
-            'Updated to ${DateFormat('yyyy-MM-dd').format(selectedDate)} $startHour:00-$endHour:00',
+            'Updated to ${DateFormat('yyyy-MM-dd').format(selectedDate)} $startHour:00-$endHour:00'
+            '${canChangeAddOns ? ' with ${chosenServices.length} add-ons' : ''}',
       );
 
       final user = ref.read(currentUserProvider);
@@ -556,7 +584,11 @@ class _MyBookingsPageState extends ConsumerState<MyBookingsPage> {
                                           _showEditBookingDialog(booking),
                                       icon: const Icon(Icons.edit_outlined,
                                           size: 18),
-                                      label: const Text('Reschedule'),
+                                      label: Text(
+                                        booking.status == BookingStatus.pending
+                                            ? 'Edit booking'
+                                            : 'Reschedule',
+                                      ),
                                     ),
                                     const SizedBox(width: AppTokens.s2),
                                     TextButton.icon(
@@ -619,6 +651,75 @@ class _CountChip extends StatelessWidget {
               fontWeight: AppTokens.wBold,
               color: AppTokens.brandInk,
             ),
+      ),
+    );
+  }
+}
+
+class _BookingAddOnsEditor extends StatelessWidget {
+  const _BookingAddOnsEditor({
+    required this.services,
+    required this.selectedServiceIds,
+    required this.canEdit,
+    required this.onChanged,
+  });
+
+  final List<AddOnService> services;
+  final Set<String> selectedServiceIds;
+  final bool canEdit;
+  final void Function(String serviceId, bool checked) onChanged;
+
+  @override
+  Widget build(BuildContext context) {
+    final selectedNames = services
+        .where((service) => selectedServiceIds.contains(service.id))
+        .map((service) => service.name)
+        .toList();
+
+    return Container(
+      padding: const EdgeInsets.fromLTRB(12, 10, 12, 8),
+      decoration: BoxDecoration(
+        color: AppTokens.canvasTint,
+        borderRadius: BorderRadius.circular(AppTokens.radiusSm),
+        border: Border.all(color: AppTokens.border),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            'Add-on services',
+            style: Theme.of(context).textTheme.titleSmall,
+          ),
+          const SizedBox(height: 2),
+          Text(
+            canEdit
+                ? 'Pending bookings can update optional services.'
+                : 'Add-ons are locked after the pending stage.',
+            style: Theme.of(context).textTheme.bodySmall,
+          ),
+          const SizedBox(height: 6),
+          if (canEdit)
+            for (final service in services)
+              CheckboxListTile(
+                dense: true,
+                value: selectedServiceIds.contains(service.id),
+                contentPadding: EdgeInsets.zero,
+                controlAffinity: ListTileControlAffinity.leading,
+                title: Text(service.name),
+                subtitle: Text('RM ${service.unitPrice.toStringAsFixed(0)}'),
+                onChanged: (checked) => onChanged(service.id, checked ?? false),
+              )
+          else
+            Padding(
+              padding: const EdgeInsets.symmetric(vertical: 8),
+              child: Text(
+                selectedNames.isEmpty
+                    ? 'No add-ons selected'
+                    : selectedNames.join(', '),
+                style: Theme.of(context).textTheme.bodyMedium,
+              ),
+            ),
+        ],
       ),
     );
   }

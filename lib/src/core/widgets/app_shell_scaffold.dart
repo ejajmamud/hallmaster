@@ -383,12 +383,6 @@ class _UserLinksDrawer extends StatelessWidget {
                       onTap: () => onNavigate('/admin'),
                     ),
                     _DrawerActionTile(
-                      icon: Icons.fact_check_outlined,
-                      title: 'Booking queue',
-                      subtitle: 'Review approvals and statuses',
-                      onTap: () => onNavigate('/admin/bookings'),
-                    ),
-                    _DrawerActionTile(
                       icon: Icons.apartment_outlined,
                       title: 'Hall management',
                       subtitle: 'Create, edit, or remove halls',
