@@ -407,6 +407,16 @@ class BookingRepository {
         amenities: (data['amenities'] as List<dynamic>? ?? [])
             .map((e) => '$e')
             .toList(),
+        imageUrls: (data['imageUrls'] as List<dynamic>? ?? [])
+            .map((e) => '$e')
+            .toList(),
+        addOnServiceIds: data.containsKey('addOnServiceIds')
+            ? (data['addOnServiceIds'] as List<dynamic>? ?? [])
+                .map((e) => '$e')
+                .toList()
+            : FirestoreService.fallbackServices
+                .map((service) => service.id)
+                .toList(),
       );
     } catch (_) {
       for (final hall in FirestoreService.fallbackHalls) {

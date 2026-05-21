@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'dart:io';
 
 import 'package:flutter/material.dart';
@@ -8,6 +9,8 @@ import 'package:hallmaster_enterprise/src/core/security.dart';
 import 'package:hallmaster_enterprise/src/core/app_state.dart';
 import 'package:hallmaster_enterprise/src/core/widgets/async_state_views.dart';
 import 'package:hallmaster_enterprise/src/core/widgets/app_shell_scaffold.dart';
+import 'package:hallmaster_enterprise/src/core/widgets/hall_photo_frame.dart';
+import 'package:image_picker/image_picker.dart';
 import 'package:intl/intl.dart';
 import 'package:path/path.dart' as p;
 import 'package:path_provider/path_provider.dart';
@@ -137,6 +140,9 @@ class _AdminDashboardPageState extends ConsumerState<AdminDashboardPage>
   }
 
   Future<void> _showHallDialog({Hall? hall}) async {
+    final hallId = hall?.id ?? const Uuid().v4();
+    var services = await ref.read(servicesProvider.future);
+    if (!mounted) return;
     final nameController = TextEditingController(text: hall?.name ?? '');
     final locationController =
         TextEditingController(text: hall?.location ?? '');
@@ -147,89 +153,191 @@ class _AdminDashboardPageState extends ConsumerState<AdminDashboardPage>
     final amenitiesController =
         TextEditingController(text: hall?.amenities.join(', ') ?? '');
     final formKey = GlobalKey<FormState>();
+    final existingImageUrls = [...?hall?.imageUrls];
+    final selectedAddOns = <String>{...?hall?.addOnServiceIds};
+    final newPhotos = <XFile>[];
 
     final submit = await showDialog<bool>(
       context: context,
       builder: (context) {
-        return AlertDialog(
-          title: Text(hall == null ? 'Add Hall' : 'Edit Hall'),
-          content: SizedBox(
-            width: 460,
-            child: Form(
-              key: formKey,
-              child: SingleChildScrollView(
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    TextFormField(
-                      controller: nameController,
-                      decoration: const InputDecoration(labelText: 'Hall Name'),
-                      validator: ValidationService.validateHallName,
-                    ),
-                    const SizedBox(height: 10),
-                    TextFormField(
-                      controller: locationController,
-                      decoration: const InputDecoration(labelText: 'Location'),
-                      validator: (value) =>
-                          (value == null || value.trim().isEmpty)
-                              ? 'Location is required'
-                              : null,
-                    ),
-                    const SizedBox(height: 10),
-                    TextFormField(
-                      controller: capacityController,
-                      decoration: const InputDecoration(labelText: 'Capacity'),
-                      keyboardType: TextInputType.number,
-                      validator: (value) {
-                        final parsed = int.tryParse(value ?? '');
-                        return ValidationService.validateCapacity(parsed);
-                      },
-                    ),
-                    const SizedBox(height: 10),
-                    TextFormField(
-                      controller: basePriceController,
-                      decoration: const InputDecoration(
-                          labelText: 'Base Price (RM / 4 hours)'),
-                      keyboardType:
-                          const TextInputType.numberWithOptions(decimal: true),
-                      validator: (value) {
-                        final parsed = double.tryParse(value ?? '');
-                        return ValidationService.validatePrice(parsed);
-                      },
-                    ),
-                    const SizedBox(height: 10),
-                    TextFormField(
-                      controller: amenitiesController,
-                      decoration: const InputDecoration(
-                        labelText: 'Amenities (comma separated)',
-                        hintText: 'Wi-Fi, Stage, Parking',
+        return StatefulBuilder(
+          builder: (context, setDialogState) => AlertDialog(
+            title: Text(hall == null ? 'Add Hall' : 'Edit Hall'),
+            content: SizedBox(
+              width: 460,
+              child: Form(
+                key: formKey,
+                child: SingleChildScrollView(
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      HallPhotoFrame(imageUrls: existingImageUrls),
+                      const SizedBox(height: AppTokens.s2),
+                      Row(
+                        children: [
+                          Expanded(
+                            child: OutlinedButton.icon(
+                              onPressed: () async {
+                                final photo = await ImagePicker().pickImage(
+                                  source: ImageSource.gallery,
+                                  maxWidth: 1800,
+                                  imageQuality: 82,
+                                );
+                                if (photo == null) return;
+                                setDialogState(() {
+                                  newPhotos
+                                    ..clear()
+                                    ..add(photo);
+                                });
+                              },
+                              icon: const Icon(
+                                  Icons.add_photo_alternate_outlined),
+                              label: const Text('Upload Photo'),
+                            ),
+                          ),
+                        ],
                       ),
-                      maxLines: 2,
-                    ),
-                  ],
+                      if (newPhotos.isNotEmpty) ...[
+                        const SizedBox(height: AppTokens.s1),
+                        Text(
+                          'New photo ready to save',
+                          style: Theme.of(context).textTheme.labelMedium,
+                        ),
+                      ],
+                      if (existingImageUrls.isNotEmpty) ...[
+                        const SizedBox(height: AppTokens.s2),
+                        Wrap(
+                          spacing: AppTokens.s1,
+                          runSpacing: AppTokens.s1,
+                          children: [
+                            for (final url in [...existingImageUrls])
+                              InputChip(
+                                avatar:
+                                    const Icon(Icons.image_outlined, size: 16),
+                                label: const Text('Current photo'),
+                                onDeleted: () => setDialogState(
+                                  () => existingImageUrls.remove(url),
+                                ),
+                              ),
+                          ],
+                        ),
+                      ],
+                      const SizedBox(height: AppTokens.s2),
+                      TextFormField(
+                        controller: nameController,
+                        decoration:
+                            const InputDecoration(labelText: 'Hall Name'),
+                        validator: ValidationService.validateHallName,
+                      ),
+                      const SizedBox(height: 10),
+                      TextFormField(
+                        controller: locationController,
+                        decoration:
+                            const InputDecoration(labelText: 'Location'),
+                        validator: (value) =>
+                            (value == null || value.trim().isEmpty)
+                                ? 'Location is required'
+                                : null,
+                      ),
+                      const SizedBox(height: 10),
+                      TextFormField(
+                        controller: capacityController,
+                        decoration:
+                            const InputDecoration(labelText: 'Capacity'),
+                        keyboardType: TextInputType.number,
+                        validator: (value) {
+                          final parsed = int.tryParse(value ?? '');
+                          return ValidationService.validateCapacity(parsed);
+                        },
+                      ),
+                      const SizedBox(height: 10),
+                      TextFormField(
+                        controller: basePriceController,
+                        decoration: const InputDecoration(
+                            labelText: 'Base Price (RM / 4 hours)'),
+                        keyboardType: const TextInputType.numberWithOptions(
+                            decimal: true),
+                        validator: (value) {
+                          final parsed = double.tryParse(value ?? '');
+                          return ValidationService.validatePrice(parsed);
+                        },
+                      ),
+                      const SizedBox(height: 10),
+                      TextFormField(
+                        controller: amenitiesController,
+                        decoration: const InputDecoration(
+                          labelText: 'Amenities (comma separated)',
+                          hintText: 'Wi-Fi, Stage, Parking',
+                        ),
+                        maxLines: 2,
+                      ),
+                      const SizedBox(height: AppTokens.s3),
+                      Row(
+                        children: [
+                          Expanded(
+                            child: Text(
+                              'Hall Add-ons',
+                              style: Theme.of(context).textTheme.titleSmall,
+                            ),
+                          ),
+                          TextButton.icon(
+                            onPressed: () async {
+                              final created = await _showServiceDialog();
+                              if (!created || !mounted) return;
+                              services =
+                                  await ref.read(servicesProvider.future);
+                              if (!mounted) return;
+                              setDialogState(() {});
+                            },
+                            icon: const Icon(Icons.add),
+                            label: const Text('New'),
+                          ),
+                        ],
+                      ),
+                      if (services.isEmpty)
+                        const Text('Create add-ons for this hall.')
+                      else
+                        for (final service in services)
+                          CheckboxListTile(
+                            contentPadding: EdgeInsets.zero,
+                            dense: true,
+                            value: selectedAddOns.contains(service.id),
+                            title: Text(service.name),
+                            subtitle: Text(
+                                'RM ${service.unitPrice.toStringAsFixed(0)}'),
+                            onChanged: (selected) => setDialogState(() {
+                              if (selected == true) {
+                                selectedAddOns.add(service.id);
+                              } else {
+                                selectedAddOns.remove(service.id);
+                              }
+                            }),
+                          ),
+                    ],
+                  ),
                 ),
               ),
             ),
-          ),
-          actions: [
-            Tooltip(
-              message: 'Close without saving',
-              child: TextButton(
-                  onPressed: () => Navigator.pop(context, false),
-                  child: const Text('Cancel')),
-            ),
-            Tooltip(
-              message: hall == null ? 'Create hall' : 'Update hall',
-              child: FilledButton(
-                onPressed: () {
-                  if (formKey.currentState?.validate() == true) {
-                    Navigator.pop(context, true);
-                  }
-                },
-                child: Text(hall == null ? 'Create' : 'Update'),
+            actions: [
+              Tooltip(
+                message: 'Close without saving',
+                child: TextButton(
+                    onPressed: () => Navigator.pop(context, false),
+                    child: const Text('Cancel')),
               ),
-            ),
-          ],
+              Tooltip(
+                message: hall == null ? 'Create hall' : 'Update hall',
+                child: FilledButton(
+                  onPressed: () {
+                    if (formKey.currentState?.validate() == true) {
+                      Navigator.pop(context, true);
+                    }
+                  },
+                  child: Text(hall == null ? 'Create' : 'Update'),
+                ),
+              ),
+            ],
+          ),
         );
       },
     );
@@ -252,16 +360,29 @@ class _AdminDashboardPageState extends ConsumerState<AdminDashboardPage>
           .toList();
 
       if (hall == null) {
-        const uuid = Uuid();
+        final uploadedUrls = await _newHallPhotoUrls(newPhotos);
+        final imageUrls =
+            uploadedUrls.isEmpty ? existingImageUrls : uploadedUrls;
+        if (imageUrls.isEmpty) {
+          throw Exception('Upload at least one hall photo');
+        }
         await hallRepository.createHall(
-          id: uuid.v4(),
+          id: hallId,
           name: nameController.text.trim(),
           location: locationController.text.trim(),
           capacity: int.parse(capacityController.text.trim()),
           basePrice: double.parse(basePriceController.text.trim()),
           amenities: amenities,
+          imageUrls: imageUrls,
+          addOnServiceIds: selectedAddOns.toList(),
         );
       } else {
+        final uploadedUrls = await _newHallPhotoUrls(newPhotos);
+        final imageUrls =
+            uploadedUrls.isEmpty ? existingImageUrls : uploadedUrls;
+        if (imageUrls.isEmpty) {
+          throw Exception('Keep or upload at least one hall photo');
+        }
         await hallRepository.updateHall(
           hall.id,
           name: nameController.text.trim(),
@@ -269,6 +390,8 @@ class _AdminDashboardPageState extends ConsumerState<AdminDashboardPage>
           capacity: int.parse(capacityController.text.trim()),
           basePrice: double.parse(basePriceController.text.trim()),
           amenities: amenities,
+          imageUrls: imageUrls,
+          addOnServiceIds: selectedAddOns.toList(),
         );
       }
 
@@ -292,6 +415,24 @@ class _AdminDashboardPageState extends ConsumerState<AdminDashboardPage>
       basePriceController.dispose();
       amenitiesController.dispose();
     }
+  }
+
+  Future<List<String>> _newHallPhotoUrls(List<XFile> photos) async {
+    if (photos.isEmpty) return const [];
+
+    final photo = photos.last;
+    final bytes = await photo.readAsBytes();
+    if (bytes.length > 650000) {
+      throw Exception('Photo is too large. Choose a smaller image.');
+    }
+
+    final lowerName = photo.name.toLowerCase();
+    final mimeType = lowerName.endsWith('.png')
+        ? 'image/png'
+        : lowerName.endsWith('.webp')
+            ? 'image/webp'
+            : 'image/jpeg';
+    return ['data:$mimeType;base64,${base64Encode(bytes)}'];
   }
 
   Future<void> _deleteHall(Hall hall) async {
@@ -407,6 +548,318 @@ class _AdminDashboardPageState extends ConsumerState<AdminDashboardPage>
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('${hall.name} deleted.')),
+      );
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Delete failed: $e')),
+      );
+    }
+  }
+
+  Future<bool> _showServiceDialog() async {
+    final nameController = TextEditingController();
+    final priceController = TextEditingController();
+    final formKey = GlobalKey<FormState>();
+
+    final save = await showDialog<bool>(
+          context: context,
+          builder: (context) => AlertDialog(
+            title: const Text('New Add-on'),
+            content: Form(
+              key: formKey,
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  TextFormField(
+                    controller: nameController,
+                    decoration: const InputDecoration(
+                      labelText: 'Add-on Name',
+                      prefixIcon: Icon(Icons.room_service_outlined),
+                    ),
+                    validator: (value) =>
+                        value == null || value.trim().length < 2
+                            ? 'Enter an add-on name'
+                            : null,
+                  ),
+                  const SizedBox(height: AppTokens.s2),
+                  TextFormField(
+                    controller: priceController,
+                    keyboardType:
+                        const TextInputType.numberWithOptions(decimal: true),
+                    decoration: const InputDecoration(
+                      labelText: 'Unit Price (RM)',
+                      prefixIcon: Icon(Icons.payments_outlined),
+                    ),
+                    validator: (value) => ValidationService.validatePrice(
+                      double.tryParse(value ?? ''),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(context, false),
+                child: const Text('Cancel'),
+              ),
+              FilledButton(
+                onPressed: () {
+                  if (formKey.currentState?.validate() == true) {
+                    Navigator.pop(context, true);
+                  }
+                },
+                child: const Text('Create'),
+              ),
+            ],
+          ),
+        ) ??
+        false;
+
+    try {
+      if (!save) return false;
+      await ref.read(serviceRepositoryProvider).createService(
+            id: const Uuid().v4(),
+            name: nameController.text.trim(),
+            unitPrice: double.parse(priceController.text.trim()),
+          );
+      ref.invalidate(servicesProvider);
+      return true;
+    } finally {
+      nameController.dispose();
+      priceController.dispose();
+    }
+  }
+
+  Future<void> _showUserDialog({AppUser? user}) async {
+    final isEdit = user != null;
+    final nameController = TextEditingController(text: user?.name ?? '');
+    final emailController = TextEditingController(text: user?.email ?? '');
+    final phoneController = TextEditingController(text: user?.phone ?? '');
+    final passwordController = TextEditingController();
+    final formKey = GlobalKey<FormState>();
+    var role = user?.role == UserRole.admin ? UserRole.admin : UserRole.user;
+
+    final save = await showDialog<bool>(
+          context: context,
+          builder: (context) => StatefulBuilder(
+            builder: (context, setDialogState) => AlertDialog(
+              title: Text(isEdit ? 'Edit User' : 'Add User'),
+              content: SizedBox(
+                width: 460,
+                child: Form(
+                  key: formKey,
+                  child: SingleChildScrollView(
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        TextFormField(
+                          controller: nameController,
+                          maxLength: 80,
+                          decoration: const InputDecoration(
+                            labelText: 'Full Name',
+                            prefixIcon: Icon(Icons.person_outline),
+                          ),
+                          validator: ValidationService.validateName,
+                          textInputAction: TextInputAction.next,
+                        ),
+                        const SizedBox(height: AppTokens.s2),
+                        TextFormField(
+                          controller: emailController,
+                          maxLength: 120,
+                          decoration: const InputDecoration(
+                            labelText: 'Email',
+                            prefixIcon: Icon(Icons.email_outlined),
+                          ),
+                          keyboardType: TextInputType.emailAddress,
+                          validator: ValidationService.validateEmail,
+                          textInputAction: TextInputAction.next,
+                        ),
+                        const SizedBox(height: AppTokens.s2),
+                        TextFormField(
+                          controller: phoneController,
+                          decoration: const InputDecoration(
+                            labelText: 'Phone',
+                            prefixIcon: Icon(Icons.call_outlined),
+                          ),
+                          keyboardType: TextInputType.phone,
+                          validator: ValidationService.validatePhone,
+                          textInputAction: TextInputAction.next,
+                        ),
+                        const SizedBox(height: AppTokens.s2),
+                        DropdownButtonFormField<UserRole>(
+                          value: role,
+                          decoration: const InputDecoration(
+                            labelText: 'Role',
+                            prefixIcon:
+                                Icon(Icons.admin_panel_settings_outlined),
+                          ),
+                          items: const [
+                            DropdownMenuItem(
+                              value: UserRole.user,
+                              child: Text('Standard User'),
+                            ),
+                            DropdownMenuItem(
+                              value: UserRole.admin,
+                              child: Text('Administrator'),
+                            ),
+                          ],
+                          onChanged: (value) {
+                            if (value == null) return;
+                            setDialogState(() => role = value);
+                          },
+                        ),
+                        const SizedBox(height: AppTokens.s2),
+                        TextFormField(
+                          controller: passwordController,
+                          decoration: InputDecoration(
+                            labelText: isEdit
+                                ? 'New Password (optional)'
+                                : 'Temporary Password',
+                            prefixIcon: const Icon(Icons.lock_outline),
+                          ),
+                          obscureText: true,
+                          validator: (value) {
+                            if (isEdit && (value == null || value.isEmpty)) {
+                              return null;
+                            }
+                            return ValidationService.validatePassword(value);
+                          },
+                          textInputAction: TextInputAction.done,
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.pop(context, false),
+                  child: const Text('Cancel'),
+                ),
+                FilledButton(
+                  onPressed: () {
+                    if (formKey.currentState?.validate() == true) {
+                      Navigator.pop(context, true);
+                    }
+                  },
+                  child: Text(isEdit ? 'Save' : 'Create'),
+                ),
+              ],
+            ),
+          ),
+        ) ??
+        false;
+
+    if (!save) {
+      nameController.dispose();
+      emailController.dispose();
+      phoneController.dispose();
+      passwordController.dispose();
+      return;
+    }
+
+    try {
+      final repository = ref.read(userRepositoryProvider);
+      final email = SecurityService.normalizeEmail(emailController.text);
+      final emailOwner = await repository.getUserByEmail(email);
+      if (emailOwner != null && emailOwner.id != user?.id) {
+        throw Exception('Email is already registered');
+      }
+
+      if (isEdit) {
+        await repository.updateUser(
+          user.id,
+          name: nameController.text,
+          email: email,
+          phone: phoneController.text.trim(),
+          role: role,
+          password: passwordController.text,
+        );
+
+        final currentUser = ref.read(currentUserProvider);
+        if (currentUser?.id == user.id) {
+          ref.read(currentUserProvider.notifier).state = AppUser(
+            id: user.id,
+            name: SecurityService.normalizeName(nameController.text),
+            email: email,
+            role: role,
+            phone: phoneController.text.trim(),
+          );
+        }
+      } else {
+        await repository.createUser(
+          id: const Uuid().v4(),
+          name: nameController.text,
+          email: email,
+          password: passwordController.text,
+          phone: phoneController.text.trim(),
+          role: role,
+        );
+      }
+
+      ref.invalidate(allUsersProvider);
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(isEdit ? 'User updated.' : 'User created.')),
+      );
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('User save failed: $e')),
+      );
+    } finally {
+      nameController.dispose();
+      emailController.dispose();
+      phoneController.dispose();
+      passwordController.dispose();
+    }
+  }
+
+  Future<void> _deleteUser(AppUser user) async {
+    if (ref.read(currentUserProvider)?.id == user.id) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('You cannot delete your own account.')),
+      );
+      return;
+    }
+
+    final confirmed = await showDialog<bool>(
+          context: context,
+          builder: (context) => AlertDialog(
+            icon: const Icon(Icons.person_remove_outlined,
+                size: 32, color: AppTokens.danger),
+            title: const Text('Delete user?'),
+            content: Text(
+              '${user.name} (${user.email}) will be removed. Existing booking records keep their user id for history.',
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(context, false),
+                child: const Text('Keep User'),
+              ),
+              FilledButton.icon(
+                style: FilledButton.styleFrom(
+                  backgroundColor: AppTokens.danger,
+                  foregroundColor: AppTokens.textInverse,
+                ),
+                onPressed: () => Navigator.pop(context, true),
+                icon: const Icon(Icons.delete_outline),
+                label: const Text('Delete'),
+              ),
+            ],
+          ),
+        ) ??
+        false;
+
+    if (!confirmed) return;
+
+    try {
+      await ref.read(userRepositoryProvider).deleteUser(user.id);
+      ref.invalidate(allUsersProvider);
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('${user.name} deleted.')),
       );
     } catch (e) {
       if (!mounted) return;
@@ -1110,6 +1563,15 @@ class _AdminDashboardPageState extends ConsumerState<AdminDashboardPage>
                                         final hall = halls[index];
                                         return Card(
                                           child: ListTile(
+                                            leading: SizedBox(
+                                              width: 70,
+                                              child: HallPhotoFrame(
+                                                imageUrls: hall.imageUrls,
+                                                borderRadius:
+                                                    AppTokens.radiusSm,
+                                                compact: true,
+                                              ),
+                                            ),
                                             title: Text(hall.name),
                                             subtitle: Text(
                                               '${hall.location} | Capacity: ${hall.capacity}\n'
@@ -1152,32 +1614,98 @@ class _AdminDashboardPageState extends ConsumerState<AdminDashboardPage>
                       ),
                     ),
                     usersAsync.when(
-                      data: (users) => users.isEmpty
-                          ? const AppEmptyState(
-                              title: 'No users registered',
-                              description:
-                                  'Users will appear here after registration or seeded demo login.',
-                              icon: Icons.people_outline,
-                            )
-                          : ListView.builder(
-                              itemCount: users.length,
-                              itemBuilder: (context, index) {
-                                final user = users[index];
-                                return Card(
-                                  child: ListTile(
-                                    leading: CircleAvatar(
-                                      child: Text(user.name.isNotEmpty
-                                          ? user.name[0].toUpperCase()
-                                          : '?'),
-                                    ),
-                                    title: Text(user.name),
-                                    subtitle: Text(
-                                        '${user.email}\nRole: ${user.role.name.toUpperCase()}'),
-                                    isThreeLine: true,
+                      data: (users) => Column(
+                        children: [
+                          Align(
+                            alignment: Alignment.centerRight,
+                            child: Wrap(
+                              spacing: AppTokens.s2,
+                              children: [
+                                Tooltip(
+                                  message: 'Refresh user list',
+                                  child: OutlinedButton.icon(
+                                    onPressed: _refreshAdminData,
+                                    icon: const Icon(Icons.refresh),
+                                    label: const Text('Refresh'),
                                   ),
-                                );
-                              },
+                                ),
+                                Tooltip(
+                                  message: 'Create a user account',
+                                  child: FilledButton.icon(
+                                    onPressed: _showUserDialog,
+                                    icon: const Icon(Icons.person_add_alt),
+                                    label: const Text('Add User'),
+                                  ),
+                                ),
+                              ],
                             ),
+                          ),
+                          const SizedBox(height: AppTokens.s2),
+                          Expanded(
+                            child: users.isEmpty
+                                ? const AppEmptyState(
+                                    title: 'No users registered',
+                                    description:
+                                        'Create a user account to start managing bookings.',
+                                    icon: Icons.people_outline,
+                                  )
+                                : ListView.builder(
+                                    itemCount: users.length,
+                                    itemBuilder: (context, index) {
+                                      final user = users[index];
+                                      final phone = user.phone?.trim() ?? '';
+                                      return Card(
+                                        child: ListTile(
+                                          leading: CircleAvatar(
+                                            child: Text(user.name.isNotEmpty
+                                                ? user.name[0].toUpperCase()
+                                                : '?'),
+                                          ),
+                                          title: Text(user.name),
+                                          subtitle: Text(
+                                            '${user.email}\n'
+                                            '${user.role == UserRole.admin ? 'Administrator' : 'Standard User'}'
+                                            '${phone.isEmpty ? '' : ' | $phone'}',
+                                          ),
+                                          isThreeLine: true,
+                                          trailing: PopupMenuButton<String>(
+                                            tooltip: 'User actions',
+                                            icon: const Icon(
+                                                Icons.more_horiz_rounded),
+                                            onSelected: (value) {
+                                              if (value == 'edit') {
+                                                _showUserDialog(user: user);
+                                              }
+                                              if (value == 'delete') {
+                                                _deleteUser(user);
+                                              }
+                                            },
+                                            itemBuilder: (context) => const [
+                                              PopupMenuItem<String>(
+                                                value: 'edit',
+                                                child: _MenuRow(
+                                                  icon: Icons.edit_outlined,
+                                                  label: 'Edit User',
+                                                ),
+                                              ),
+                                              PopupMenuItem<String>(
+                                                value: 'delete',
+                                                child: _MenuRow(
+                                                  icon: Icons
+                                                      .person_remove_outlined,
+                                                  label: 'Delete User',
+                                                  color: AppTokens.danger,
+                                                ),
+                                              ),
+                                            ],
+                                          ),
+                                        ),
+                                      );
+                                    },
+                                  ),
+                          ),
+                        ],
+                      ),
                       loading: () =>
                           const AppLoadingState(label: 'Loading users...'),
                       error: (err, stack) => AppErrorState(

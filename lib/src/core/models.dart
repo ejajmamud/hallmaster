@@ -31,6 +31,8 @@ class Hall extends Equatable {
     required this.capacity,
     required this.basePrice,
     required this.amenities,
+    this.imageUrls = const [],
+    this.addOnServiceIds = const [],
   });
 
   final String id;
@@ -39,13 +41,25 @@ class Hall extends Equatable {
   final int capacity;
   final double basePrice;
   final List<String> amenities;
+  final List<String> imageUrls;
+  final List<String> addOnServiceIds;
 
   @override
-  List<Object?> get props => [id, name, location, capacity, basePrice, amenities];
+  List<Object?> get props => [
+        id,
+        name,
+        location,
+        capacity,
+        basePrice,
+        amenities,
+        imageUrls,
+        addOnServiceIds,
+      ];
 }
 
 class AddOnService extends Equatable {
-  const AddOnService({required this.id, required this.name, required this.unitPrice});
+  const AddOnService(
+      {required this.id, required this.name, required this.unitPrice});
 
   final String id;
   final String name;
@@ -100,5 +114,15 @@ class Booking extends Equatable {
   }
 
   @override
-  List<Object?> get props => [id, userId, hall, date, startHour, endHour, services, status, finalPrice];
+  List<Object?> get props => [
+        id,
+        userId,
+        hall,
+        date,
+        startHour,
+        endHour,
+        services,
+        status,
+        finalPrice
+      ];
 }

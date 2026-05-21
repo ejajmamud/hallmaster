@@ -17,6 +17,7 @@ class FirestoreService {
       capacity: 350,
       basePrice: 1200,
       amenities: ['Stage', 'Wi-Fi', 'Parking'],
+      addOnServiceIds: ['s1', 's2', 's3'],
     ),
     const Hall(
       id: 'h2',
@@ -25,6 +26,7 @@ class FirestoreService {
       capacity: 120,
       basePrice: 680,
       amenities: ['Projector', 'Coffee Bar'],
+      addOnServiceIds: ['s1', 's2'],
     ),
     const Hall(
       id: 'h3',
@@ -33,6 +35,7 @@ class FirestoreService {
       capacity: 40,
       basePrice: 320,
       amenities: ['Smart Display', 'Soundproof'],
+      addOnServiceIds: ['s1'],
     ),
   ];
 
@@ -95,6 +98,7 @@ class FirestoreService {
       'capacity': 350,
       'basePrice': 1200.0,
       'amenities': ['Stage', 'Wi-Fi', 'Parking'],
+      'addOnServiceIds': ['s1', 's2', 's3'],
       'createdAt': now,
       'updatedAt': now,
     });
@@ -105,6 +109,7 @@ class FirestoreService {
       'capacity': 120,
       'basePrice': 680.0,
       'amenities': ['Projector', 'Coffee Bar'],
+      'addOnServiceIds': ['s1', 's2'],
       'createdAt': now,
       'updatedAt': now,
     });
@@ -115,6 +120,7 @@ class FirestoreService {
       'capacity': 40,
       'basePrice': 320.0,
       'amenities': ['Smart Display', 'Soundproof'],
+      'addOnServiceIds': ['s1'],
       'createdAt': now,
       'updatedAt': now,
     });
