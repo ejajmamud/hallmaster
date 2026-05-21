@@ -6,6 +6,7 @@ import 'package:hallmaster_enterprise/src/core/app_state.dart';
 import 'package:hallmaster_enterprise/src/core/models.dart';
 import 'package:hallmaster_enterprise/src/core/widgets/async_state_views.dart';
 import 'package:hallmaster_enterprise/src/core/widgets/app_shell_scaffold.dart';
+import 'package:hallmaster_enterprise/src/core/widgets/hall_photo_frame.dart';
 
 class GuestHomePage extends ConsumerStatefulWidget {
   const GuestHomePage({super.key});
@@ -127,6 +128,8 @@ class _GuestHomePageState extends ConsumerState<GuestHomePage> {
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
+                                HallPhotoFrame(imageUrls: hall.imageUrls),
+                                const SizedBox(height: AppTokens.s3),
                                 Row(
                                   children: [
                                     Expanded(

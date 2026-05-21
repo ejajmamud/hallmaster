@@ -66,8 +66,15 @@ class _BookingFlowPageState extends ConsumerState<BookingFlowPage> {
 
   Widget _buildForm(
       List<Hall> halls, List<AddOnService> services, AppUser? user) {
-    final chosen =
-        services.where((s) => selectedServices.contains(s.id)).toList();
+    final availableServices = selectedHall == null
+        ? <AddOnService>[]
+        : services
+            .where(
+                (service) => selectedHall!.addOnServiceIds.contains(service.id))
+            .toList();
+    final chosen = availableServices
+        .where((s) => selectedServices.contains(s.id))
+        .toList();
     final subtotal = (selectedHall?.basePrice ?? 0) *
         ((endHour - startHour).clamp(1, 24) / 4);
     final serviceTotal = chosen.fold<double>(0, (sum, s) => sum + s.unitPrice);
@@ -157,7 +164,12 @@ class _BookingFlowPageState extends ConsumerState<BookingFlowPage> {
                               Text(hall.name, overflow: TextOverflow.ellipsis),
                         ),
                     ],
-                    onChanged: (value) => setState(() => selectedHall = value),
+                    onChanged: (value) => setState(() {
+                      selectedHall = value;
+                      selectedServices.removeWhere((serviceId) =>
+                          value == null ||
+                          !value.addOnServiceIds.contains(serviceId));
+                    }),
                   ),
                   const SizedBox(height: 10),
                   Tooltip(
@@ -268,23 +280,29 @@ class _BookingFlowPageState extends ConsumerState<BookingFlowPage> {
                     subtitle: 'Select optional services for your event',
                   ),
                   const SizedBox(height: 8),
-                  for (final service in services)
-                    CheckboxListTile(
-                      value: selectedServices.contains(service.id),
-                      contentPadding: EdgeInsets.zero,
-                      title: Text(service.name),
-                      subtitle:
-                          Text('RM ${service.unitPrice.toStringAsFixed(0)}'),
-                      onChanged: (checked) {
-                        setState(() {
-                          if (checked == true) {
-                            selectedServices.add(service.id);
-                          } else {
-                            selectedServices.remove(service.id);
-                          }
-                        });
-                      },
-                    ),
+                  if (availableServices.isEmpty)
+                    Text(
+                      'No add-ons configured for this hall.',
+                      style: Theme.of(context).textTheme.bodyMedium,
+                    )
+                  else
+                    for (final service in availableServices)
+                      CheckboxListTile(
+                        value: selectedServices.contains(service.id),
+                        contentPadding: EdgeInsets.zero,
+                        title: Text(service.name),
+                        subtitle:
+                            Text('RM ${service.unitPrice.toStringAsFixed(0)}'),
+                        onChanged: (checked) {
+                          setState(() {
+                            if (checked == true) {
+                              selectedServices.add(service.id);
+                            } else {
+                              selectedServices.remove(service.id);
+                            }
+                          });
+                        },
+                      ),
                 ],
               ),
             ),

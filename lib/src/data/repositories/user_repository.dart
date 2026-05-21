@@ -121,10 +121,21 @@ class UserRepository {
     }
   }
 
-  Future<void> updateUser(String id, {String? name, String? phone}) async {
+  Future<void> updateUser(
+    String id, {
+    String? name,
+    String? email,
+    String? password,
+    String? phone,
+    UserRole? role,
+  }) async {
     final updates = <String, dynamic>{
       if (name != null) 'name': SecurityService.normalizeName(name),
+      if (email != null) 'email': SecurityService.normalizeEmail(email),
+      if (password != null && password.isNotEmpty)
+        'passwordHash': SecurityService.hashPassword(password),
       if (phone != null) 'phone': phone,
+      if (role != null) 'role': role.name,
       'updatedAt': DateTime.now().toIso8601String(),
     };
     try {

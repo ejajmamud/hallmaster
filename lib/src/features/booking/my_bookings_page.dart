@@ -148,6 +148,9 @@ class _MyBookingsPageState extends ConsumerState<MyBookingsPage> {
     final halls = await ref.read(hallsProvider.future);
     final services = await ref.read(servicesProvider.future);
     if (!mounted) return;
+    final canReschedule = booking.status == BookingStatus.pending;
+    final canEditAddOns = booking.status == BookingStatus.pending ||
+        booking.status == BookingStatus.confirmed;
     Hall? selectedHall = booking.hall;
     for (final hall in halls) {
       if (hall.id == booking.hall.id) {
@@ -160,18 +163,27 @@ class _MyBookingsPageState extends ConsumerState<MyBookingsPage> {
     int endHour = booking.endHour;
     final selectedServiceIds =
         booking.services.map((service) => service.id).toSet();
-    final canChangeAddOns = booking.status == BookingStatus.pending;
     String? dialogError;
 
     final result = await showDialog<bool>(
       context: context,
       builder: (context) {
+        final dialogWidth = MediaQuery.sizeOf(context).width < 520
+            ? MediaQuery.sizeOf(context).width - 32
+            : 460.0;
+
         return StatefulBuilder(
           builder: (context, setDialogState) {
             final selectedHallPrice =
                 selectedHall?.basePrice ?? booking.hall.basePrice;
             final durationFactor = ((endHour - startHour).clamp(1, 24)) / 4;
-            final selectedServices = services
+            final availableServices = canEditAddOns && selectedHall != null
+                ? services
+                    .where((service) =>
+                        selectedHall!.addOnServiceIds.contains(service.id))
+                    .toList()
+                : booking.services;
+            final selectedServices = availableServices
                 .where((service) => selectedServiceIds.contains(service.id))
                 .toList();
             final serviceTotal = selectedServices.fold<double>(
@@ -181,11 +193,11 @@ class _MyBookingsPageState extends ConsumerState<MyBookingsPage> {
             final total = subtotal + serviceTotal + tax;
 
             return AlertDialog(
-              title: Text(canChangeAddOns
-                  ? 'Update Pending Booking'
-                  : 'Reschedule Booking'),
+              title: Text(
+                canReschedule ? 'Update Pending Booking' : 'Edit Booking',
+              ),
               content: SizedBox(
-                width: 460,
+                width: dialogWidth,
                 child: SingleChildScrollView(
                   child: Column(
                     mainAxisSize: MainAxisSize.min,
@@ -194,87 +206,124 @@ class _MyBookingsPageState extends ConsumerState<MyBookingsPage> {
                       if (dialogError != null)
                         Padding(
                           padding: const EdgeInsets.only(bottom: 10),
-                          child: Text(dialogError!,
-                              style: TextStyle(
-                                  color: Theme.of(context).colorScheme.error)),
+                          child: Text(
+                            dialogError!,
+                            style: TextStyle(
+                              color: Theme.of(context).colorScheme.error,
+                            ),
+                          ),
                         ),
-                      DropdownButtonFormField<Hall>(
-                        value: selectedHall,
-                        decoration: const InputDecoration(labelText: 'Hall'),
-                        items: halls
-                            .map(
-                              (hall) => DropdownMenuItem<Hall>(
-                                value: hall,
-                                child: Text(
-                                    '${hall.name} (RM ${hall.basePrice.toStringAsFixed(2)})'),
-                              ),
-                            )
-                            .toList(),
-                        onChanged: (value) =>
-                            setDialogState(() => selectedHall = value),
-                      ),
-                      const SizedBox(height: 10),
-                      Tooltip(
-                        message: 'Select booking date',
-                        child: ListTile(
-                          contentPadding: EdgeInsets.zero,
-                          title: const Text('Date'),
-                          subtitle: Text(DateFormat('EEE, dd MMM yyyy')
-                              .format(selectedDate)),
-                          trailing: const Icon(Icons.calendar_today_outlined),
-                          onTap: () async {
-                            final picked = await showDatePicker(
-                              context: context,
-                              initialDate: selectedDate,
-                              firstDate: DateTime.now(),
-                              lastDate:
-                                  DateTime.now().add(const Duration(days: 365)),
-                            );
-                            if (picked != null) {
-                              setDialogState(() => selectedDate = picked);
+                      if (canReschedule) ...[
+                        DropdownButtonFormField<Hall>(
+                          isExpanded: true,
+                          value: selectedHall,
+                          decoration: const InputDecoration(labelText: 'Hall'),
+                          items: halls
+                              .map(
+                                (hall) => DropdownMenuItem<Hall>(
+                                  value: hall,
+                                  child: Text(
+                                    '${hall.name} (RM ${hall.basePrice.toStringAsFixed(2)})',
+                                  ),
+                                ),
+                              )
+                              .toList(),
+                          onChanged: (value) => setDialogState(() {
+                            selectedHall = value;
+                            if (canEditAddOns) {
+                              selectedServiceIds.removeWhere((serviceId) =>
+                                  value == null ||
+                                  !value.addOnServiceIds.contains(serviceId));
                             }
-                          },
+                          }),
                         ),
-                      ),
-                      const SizedBox(height: 6),
-                      Row(
-                        children: [
-                          Expanded(
-                            child: DropdownButtonFormField<int>(
-                              value: startHour,
-                              decoration: const InputDecoration(
-                                  labelText: 'Start Hour'),
-                              items: [
-                                for (int h = 8; h <= 20; h++)
-                                  DropdownMenuItem(
-                                      value: h, child: Text('$h:00')),
-                              ],
-                              onChanged: (value) => setDialogState(
-                                  () => startHour = value ?? startHour),
+                        const SizedBox(height: 10),
+                        Tooltip(
+                          message: 'Select booking date',
+                          child: ListTile(
+                            contentPadding: EdgeInsets.zero,
+                            title: const Text('Date'),
+                            subtitle: Text(
+                              DateFormat('EEE, dd MMM yyyy')
+                                  .format(selectedDate),
                             ),
+                            trailing: const Icon(Icons.calendar_today_outlined),
+                            onTap: () async {
+                              final picked = await showDatePicker(
+                                context: context,
+                                initialDate: selectedDate,
+                                firstDate: DateTime.now(),
+                                lastDate: DateTime.now().add(
+                                  const Duration(days: 365),
+                                ),
+                              );
+                              if (picked != null) {
+                                setDialogState(() => selectedDate = picked);
+                              }
+                            },
                           ),
-                          const SizedBox(width: 10),
-                          Expanded(
-                            child: DropdownButtonFormField<int>(
-                              value: endHour,
-                              decoration:
-                                  const InputDecoration(labelText: 'End Hour'),
-                              items: [
-                                for (int h = 9; h <= 22; h++)
-                                  DropdownMenuItem(
-                                      value: h, child: Text('$h:00')),
-                              ],
-                              onChanged: (value) => setDialogState(
-                                  () => endHour = value ?? endHour),
+                        ),
+                        const SizedBox(height: 6),
+                        Row(
+                          children: [
+                            Expanded(
+                              child: DropdownButtonFormField<int>(
+                                isExpanded: true,
+                                value: startHour,
+                                decoration: const InputDecoration(
+                                  labelText: 'Start Hour',
+                                ),
+                                items: [
+                                  for (int h = 8; h <= 20; h++)
+                                    DropdownMenuItem(
+                                      value: h,
+                                      child: Text('$h:00'),
+                                    ),
+                                ],
+                                onChanged: (value) => setDialogState(
+                                  () => startHour = value ?? startHour,
+                                ),
+                              ),
                             ),
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 12),
+                            const SizedBox(width: 10),
+                            Expanded(
+                              child: DropdownButtonFormField<int>(
+                                isExpanded: true,
+                                value: endHour,
+                                decoration: const InputDecoration(
+                                  labelText: 'End Hour',
+                                ),
+                                items: [
+                                  for (int h = 9; h <= 22; h++)
+                                    DropdownMenuItem(
+                                      value: h,
+                                      child: Text('$h:00'),
+                                    ),
+                                ],
+                                onChanged: (value) => setDialogState(
+                                  () => endHour = value ?? startHour,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 12),
+                      ] else ...[
+                        Text(
+                          'Rescheduling is admin only. You can still update add-ons here.',
+                          style: Theme.of(context).textTheme.bodyMedium,
+                        ),
+                        const SizedBox(height: 8),
+                        Text(
+                          '${booking.hall.name} • ${DateFormat('EEE, dd MMM yyyy').format(selectedDate)} • ${startHour.toString().padLeft(2, '0')}:00-${endHour.toString().padLeft(2, '0')}:00',
+                          style: Theme.of(context).textTheme.bodySmall,
+                        ),
+                        const SizedBox(height: 12),
+                      ],
                       _BookingAddOnsEditor(
-                        services: services,
+                        services: availableServices,
                         selectedServiceIds: selectedServiceIds,
-                        canEdit: canChangeAddOns,
+                        canEdit: canEditAddOns,
                         onChanged: (serviceId, checked) {
                           setDialogState(() {
                             if (checked) {
@@ -286,7 +335,11 @@ class _MyBookingsPageState extends ConsumerState<MyBookingsPage> {
                         },
                       ),
                       const SizedBox(height: 8),
-                      Text('New total: RM ${total.toStringAsFixed(2)}'),
+                      Text(
+                        canReschedule
+                            ? 'New total: RM ${total.toStringAsFixed(2)}'
+                            : 'Updated total: RM ${total.toStringAsFixed(2)}',
+                      ),
                     ],
                   ),
                 ),
@@ -331,7 +384,13 @@ class _MyBookingsPageState extends ConsumerState<MyBookingsPage> {
     }
 
     final durationFactor = ((endHour - startHour).clamp(1, 24)) / 4;
-    final chosenServices = services
+    final availableServices = canEditAddOns
+        ? services
+            .where(
+                (service) => selectedHall!.addOnServiceIds.contains(service.id))
+            .toList()
+        : booking.services;
+    final chosenServices = availableServices
         .where((service) => selectedServiceIds.contains(service.id))
         .toList();
     final serviceTotal = chosenServices.fold<double>(
@@ -344,24 +403,26 @@ class _MyBookingsPageState extends ConsumerState<MyBookingsPage> {
       final bookingRepo = ref.read(bookingRepositoryProvider);
       await bookingRepo.updateBooking(
         booking.id,
-        hallId: selectedHall!.id,
-        date: selectedDate,
-        startHour: startHour,
-        endHour: endHour,
-        serviceIds: canChangeAddOns ? selectedServiceIds.toList() : null,
+        hallId: canReschedule ? selectedHall!.id : null,
+        date: canReschedule ? selectedDate : null,
+        startHour: canReschedule ? startHour : null,
+        endHour: canReschedule ? endHour : null,
+        serviceIds: canEditAddOns ? selectedServiceIds.toList() : null,
         finalPrice: total,
+        allowReschedule: canReschedule,
       );
 
       await bookingRepo.logAudit(
         entityType: 'Booking',
         entityId: booking.id,
-        action: canChangeAddOns
+        action: canReschedule
             ? 'UPDATED_PENDING_BOOKING_BY_USER'
-            : 'RESCHEDULED_BY_USER',
+            : 'UPDATED_BOOKING_ADDONS_BY_USER',
         actorId: ref.read(currentUserProvider)?.id ?? booking.userId,
-        changes:
-            'Updated to ${DateFormat('yyyy-MM-dd').format(selectedDate)} $startHour:00-$endHour:00'
-            '${canChangeAddOns ? ' with ${chosenServices.length} add-ons' : ''}',
+        changes: canReschedule
+            ? 'Updated to ${DateFormat('yyyy-MM-dd').format(selectedDate)} $startHour:00-$endHour:00'
+                '${canEditAddOns ? ' with ${chosenServices.length} add-ons' : ''}'
+            : 'Requested ${chosenServices.length} add-on updates',
       );
 
       final user = ref.read(currentUserProvider);
@@ -372,7 +433,13 @@ class _MyBookingsPageState extends ConsumerState<MyBookingsPage> {
 
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Booking updated successfully')),
+        SnackBar(
+          content: Text(
+            canReschedule
+                ? 'Booking updated successfully'
+                : 'Add-on request updated successfully',
+          ),
+        ),
       );
     } catch (e) {
       if (!mounted) return;
@@ -587,7 +654,7 @@ class _MyBookingsPageState extends ConsumerState<MyBookingsPage> {
                                       label: Text(
                                         booking.status == BookingStatus.pending
                                             ? 'Edit booking'
-                                            : 'Reschedule',
+                                            : 'Edit add-ons',
                                       ),
                                     ),
                                     const SizedBox(width: AppTokens.s2),
@@ -699,16 +766,21 @@ class _BookingAddOnsEditor extends StatelessWidget {
           ),
           const SizedBox(height: 6),
           if (canEdit)
-            for (final service in services)
-              CheckboxListTile(
+            ...services.map(
+              (service) => CheckboxListTile(
                 dense: true,
                 value: selectedServiceIds.contains(service.id),
                 contentPadding: EdgeInsets.zero,
                 controlAffinity: ListTileControlAffinity.leading,
-                title: Text(service.name),
+                title: Text(
+                  service.name,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
                 subtitle: Text('RM ${service.unitPrice.toStringAsFixed(0)}'),
                 onChanged: (checked) => onChanged(service.id, checked ?? false),
-              )
+              ),
+            )
           else
             Padding(
               padding: const EdgeInsets.symmetric(vertical: 8),

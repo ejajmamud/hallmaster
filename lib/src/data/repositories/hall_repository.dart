@@ -63,6 +63,8 @@ class HallRepository {
     required int capacity,
     required double basePrice,
     required List<String> amenities,
+    required List<String> imageUrls,
+    required List<String> addOnServiceIds,
   }) async {
     final now = DateTime.now().toIso8601String();
     final data = {
@@ -71,6 +73,8 @@ class HallRepository {
       'capacity': capacity,
       'basePrice': basePrice,
       'amenities': amenities,
+      'imageUrls': imageUrls,
+      'addOnServiceIds': addOnServiceIds,
       'createdAt': now,
       'updatedAt': now,
     };
@@ -88,6 +92,8 @@ class HallRepository {
         capacity: capacity,
         basePrice: basePrice,
         amenities: amenities,
+        imageUrls: imageUrls,
+        addOnServiceIds: addOnServiceIds,
       ));
     }
   }
@@ -99,6 +105,8 @@ class HallRepository {
     int? capacity,
     double? basePrice,
     List<String>? amenities,
+    List<String>? imageUrls,
+    List<String>? addOnServiceIds,
   }) async {
     final updates = <String, dynamic>{
       if (name != null) 'name': name,
@@ -106,6 +114,8 @@ class HallRepository {
       if (capacity != null) 'capacity': capacity,
       if (basePrice != null) 'basePrice': basePrice,
       if (amenities != null) 'amenities': amenities,
+      if (imageUrls != null) 'imageUrls': imageUrls,
+      if (addOnServiceIds != null) 'addOnServiceIds': addOnServiceIds,
       'updatedAt': DateTime.now().toIso8601String(),
     };
 
@@ -126,6 +136,8 @@ class HallRepository {
         capacity: capacity ?? hall.capacity,
         basePrice: basePrice ?? hall.basePrice,
         amenities: amenities ?? hall.amenities,
+        imageUrls: imageUrls ?? hall.imageUrls,
+        addOnServiceIds: addOnServiceIds ?? hall.addOnServiceIds,
       );
     }
   }
@@ -173,6 +185,15 @@ class HallRepository {
       basePrice: (data['basePrice'] as num?)?.toDouble() ?? 0,
       amenities:
           (data['amenities'] as List<dynamic>? ?? []).map((e) => '$e').toList(),
+      imageUrls:
+          (data['imageUrls'] as List<dynamic>? ?? []).map((e) => '$e').toList(),
+      addOnServiceIds: data.containsKey('addOnServiceIds')
+          ? (data['addOnServiceIds'] as List<dynamic>? ?? [])
+              .map((e) => '$e')
+              .toList()
+          : FirestoreService.fallbackServices
+              .map((service) => service.id)
+              .toList(),
     );
   }
 }
