@@ -1,54 +1,19 @@
-# HallMaster Enterprise
+# hallmaster
 
-Hall booking mini-project built with Flutter.
+Hey there! This is a complete project repository featuring Dart.
 
-## Platform Compliance
+## Why this repository exists
+I source and maintain clean, reference codebases across various technologies (including web apps, mobile apps, workflow integrations, and system utilities). This repository is kept public to serve as a reference or clean starting point for fellow developers.
 
-- Primary target: Android app (submission target)
-- iOS support: codebase includes `ios/`, but iOS build/signing must be done on macOS with Xcode
+## Tech Stack & Highlights
+- **Primary Tech Stack**: Dart
+- Zero bloat, clean directories, and fully structured.
 
-If your mini-project brief explicitly asks for Android, this repository is aligned with that requirement.
-If your lecturer explicitly asks for iOS evidence as well, use the iOS checklist below on a Mac.
+## How to run or use
+1. Clone this repository to your local workspace.
+2. Install the necessary dependencies for this stack (e.g., check configuration files like `package.json`, `requirements.txt`, etc.).
+3. Run the project according to standard procedures for this environment.
 
-## Android Build and Run
-
-Standard Flutter commands:
-
-```powershell
-flutter pub get
-flutter run -d emulator-5554
-flutter build apk --release
-flutter build appbundle --release
-```
-
-If your machine has the Android Studio JBR path mismatch issue, use the verified Gradle workaround:
-
-```powershell
-Set-Location android
-$env:JAVA_HOME='C:\Program Files\Android\Android Studio1\jbr'
-$env:Path = "$env:JAVA_HOME\bin;" + $env:Path
-$env:GRADLE_USER_HOME='..\\.gradle_user_home'
-.\gradlew.bat app:assembleRelease
-.\gradlew.bat app:bundleRelease
-.\gradlew.bat app:installDebug
-```
-
-## Android Output Artifacts
-
-- `build/app/outputs/apk/release/app-release.apk`
-- `build/app/outputs/bundle/release/app-release.aab`
-
-## iOS Checklist (Only If Required by Brief)
-
-Run on macOS:
-
-1. Open `ios/Runner.xcworkspace` in Xcode
-2. Configure signing team and bundle ID
-3. Run `flutter build ios --release`
-4. Archive and export IPA from Xcode Organizer
-5. Capture iOS simulator/device screenshots as evidence
-
-## Submission Evidence
-
-- Final report: `FINAL_SUBMISSION_REPORT_2026-04-19.md`
-- Screenshots: `submission_screenshots/`
+---
+Feel free to fork, explore, or reach out if you have any questions!
+Created and maintained by [Md Ejaj Mahmud](https://github.com/ejajmahmud).
